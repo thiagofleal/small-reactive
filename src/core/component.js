@@ -38,7 +38,7 @@ export class Component {
 
   appendChild(component, selector) {
     if (component instanceof Component) {
-      this.#childs.push(component);
+      this.#childs.push({ selector, component });
       this.#onShowCallbacks.push(() => {
         const elements = this.#currentElement.querySelectorAll(selector);
         component.show(Array.prototype.slice.call(elements));
@@ -70,7 +70,7 @@ export class Component {
       vDom.load(template);
       vDom.apply(element);
       this.#assignComponent(element);
-      this.#childs.forEach(child => child.reload());
+      this.#childs.forEach(child => child.component.reload());
     });
     this.onReload();
   }
