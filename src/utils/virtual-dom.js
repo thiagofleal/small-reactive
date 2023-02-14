@@ -1,4 +1,5 @@
-import { getAllAttributesFrom } from "./functions.js";
+import { Subject } from "../../rx.js";
+import { getAllAttributesFrom, parseHTML } from "./functions.js";
 
 function getNodeType(node) {
 	if (node.nodeType === 3) return "text";
@@ -27,23 +28,30 @@ function diffAttributes(template, element) {
 	}
 }
 
-export function diff(template, element) {
+function diff(template, element, onAdd, onRemove, onAlter) {
 	const domNodes = Array.prototype.slice.call(element.childNodes);
 	const templateNodes = Array.prototype.slice.call(template.childNodes);
 	let count = domNodes.length - templateNodes.length;
 
 	if (count > 0) {
 		for (; count > 0; count--) {
-			domNodes[domNodes.length - count].parentNode.removeChild(domNodes[domNodes.length - count]);
+			const child = domNodes[domNodes.length - count];
+			domNodes[domNodes.length - count].parentNode.removeChild(child);
+			onRemove(child);
 		}
 	}
 	templateNodes.forEach((node, index) => {
 		if (!domNodes[index]) {
-			element.appendChild(node.cloneNode(true));
+			const child = node.cloneNode(true);
+			element.appendChild(child);
+			onAdd(child);
 			return;
 		}
 		if (getNodeType(node) !== getNodeType(domNodes[index])) {
-			domNodes[index].parentNode.replaceChild(node.cloneNode(true), domNodes[index]);
+			const child = node.cloneNode(true);
+			const current = domNodes[index];
+			domNodes[index].parentNode.replaceChild(child, current);
+			onAlter(current, child);
 			return;
 		}
 		const templateContent = getNodeContent(node);
@@ -56,7 +64,7 @@ export function diff(template, element) {
 		}
 		if (domNodes[index].childNodes.length < 1 && node.childNodes.length > 0) {
 			const fragment = document.createDocumentFragment();
-			diff(node, fragment);
+			diff(node, fragment, onAdd, onRemove, onAlter);
 			domNodes[index].appendChild(fragment);
 			return;
 		}
@@ -65,4 +73,26 @@ export function diff(template, element) {
 		}
 		diffAttributes(node.parentElement, domNodes[index].parentElement);
 	});
+}
+
+export class VirtualDom {
+	#template = null;
+
+	addElement$ = new Subject();
+	removeElement$ = new Subject();
+	alterElement$ = new Subject();
+
+	load(template) {
+		this.#template = parseHTML(template);
+	}
+
+	apply(element) {
+		diff(
+			this.#template,
+			element,
+			child => this.addElement$.next(child),
+			child => this.addElement$.next(child),
+			(previous, current) => this.addElement$.next({ previous, current })
+		);
+	}
 }

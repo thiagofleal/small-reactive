@@ -1,5 +1,4 @@
-import { parseHTML } from "../utils/functions.js";
-import { diff } from "../utils/virtual-dom.js";
+import { VirtualDom } from "../utils/virtual-dom.js";
 
 export class Component {
   #properties = {};
@@ -66,9 +65,10 @@ export class Component {
   reload() {
     this.#elements.forEach(element => {
       this.#currentElement = element;
-      const templateHTML = this.render(element);
-      const template = parseHTML(templateHTML);
-      diff(template, element);
+      const template = this.render(element);
+      const vDom = new VirtualDom();
+      vDom.load(template);
+      vDom.apply(element);
       this.#assignComponent(element);
       this.#childs.forEach(child => child.reload());
     });
