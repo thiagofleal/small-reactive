@@ -1,4 +1,3 @@
-import { Subject, Subscription } from "../../rx.js";
 import { parseHTML } from "../utils/functions.js";
 import { diff } from "../utils/virtual-dom.js";
 
@@ -7,8 +6,6 @@ export class Component {
   #elements = [];
   #currentElement = null;
   #childs = [];
-  #propertyChanges$ = new Subject();
-  #subscription = new Subscription();
   #onShowCallbacks = [];
 
   constructor(props, options) {
@@ -19,7 +16,7 @@ export class Component {
           get: () => this.#properties[key],
           set: value => {
             this.#properties[key] = value;
-            this.#propertyChanges$.next();
+            this.reload();
           }
         })
       }
@@ -30,10 +27,6 @@ export class Component {
   onShow() {}
   onReload() {}
 
-  #onDestroy() {
-    this.#subscription.unsubscribe();
-  }
-
   show(elements) {
     if (!Array.isArray(elements)) {
       elements = [ elements ];
@@ -42,7 +35,6 @@ export class Component {
     this.reload();
     this.#onShowCallbacks.forEach(e => e());
     this.onShow();
-    this.#subscription.add(this.#propertyChanges$.subscribe(() => this.reload()));
   }
 
   appendChild(component, selector) {
@@ -80,5 +72,6 @@ export class Component {
       this.#assignComponent(element);
       this.#childs.forEach(child => child.reload());
     });
+    this.onReload();
   }
 }
