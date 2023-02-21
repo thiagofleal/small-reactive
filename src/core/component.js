@@ -83,6 +83,18 @@ export class Component {
     this.#childs.push({ selector, component, instances: [] });
   }
 
+  setChilds(childs) {
+    if (typeof childs === "object") {
+      if (Array.isArray(childs)) {
+        childs.forEach(e => this.appendChild(e.selector, e.component));
+      } else {
+        for (const key in childs) {
+          this.appendChild(key, childs[key]);
+        }
+      }
+    }
+  }
+
   #assignComponent(item) {
     (item.childNodes || []).forEach(child => {
       child._component = this;
