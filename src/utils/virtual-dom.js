@@ -1,4 +1,3 @@
-import { Subject } from "../../rx.js";
 import { getAllAttributesFrom, parseHTML } from "./functions.js";
 
 function getNodeType(node) {
