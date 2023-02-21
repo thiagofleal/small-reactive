@@ -67,7 +67,9 @@ function diff(template, element) {
 		if (node.childNodes.length > 0) {
 			diff(node, domNodes[index]);
 		}
-		diffAttributes(node.parentElement, domNodes[index].parentElement);
+		if (node instanceof HTMLElement && domNodes[index] instanceof HTMLElement) {
+			diffAttributes(node, domNodes[index]);
+		}
 	});
 }
 
