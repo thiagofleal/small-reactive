@@ -2,12 +2,12 @@ import { VirtualDom } from "../utils/virtual-dom.js";
 
 export class Component {
   #properties = {};
-  #elements = [];
-  #currentElement = null;
+  #element = [];
   #childs = [];
   #onShowCallbacks = [];
+  #inUse = false;
 
-  constructor(props, options) {
+  constructor(props) {
     if (props && typeof props === "object") {
       for (const key in props) {
         this.#properties[key] = props[key];
@@ -17,43 +17,80 @@ export class Component {
             this.#properties[key] = value;
             this.reload();
           }
-        })
+        });
       }
     }
+  }
+
+  get element() {
+    return this.#element;
   }
 
   render() { return ""; }
   onShow() {}
   onReload() {}
+  onConnect() {}
+  onDisconnect() {}
 
-  show(elements) {
-    if (!Array.isArray(elements)) {
-      elements = [ elements ];
+  #markAsInUse() {
+    this.#inUse = true;
+  }
+  #resetInUse() {
+    this.#inUse = false;
+  }
+  #checkInUse() {
+    if (!this.#inUse) {
+      this.onDisconnect();
+      return false;
     }
-    this.#elements = elements;
+    return true;
+  }
+
+  #instanceComponent(element, seed, ...args) {
+    let instance = seed;
+
+    if (element && element.component) {
+      if (element.component instanceof Component) {
+        return element.component;
+      }
+    }
+    if (typeof seed === "function") {
+      try {
+        instance = new seed(...args);
+      } catch (e) {
+        instance = seed(...args);
+      }
+    }
+    if (instance instanceof Component) {
+      return instance;
+    }
+    return null;
+}
+
+  show(element) {
+    this.#element = element;
     this.reload();
+    this.#assignComponent(element);
+    if (!element.component) {
+      element.component = this;
+      this.onConnect();
+    }
     this.#onShowCallbacks.forEach(e => e());
     this.onShow();
   }
 
-  appendChild(component, selector) {
-    if (component instanceof Component) {
-      this.#childs.push({ selector, component });
-      this.#onShowCallbacks.push(() => {
-        const elements = this.#currentElement.querySelectorAll(selector);
-        component.show(Array.prototype.slice.call(elements));
-      });
-    }
+  appendChild(selector, component) {
+    this.#childs.push({ selector, component, instances: [] });
   }
 
   #assignComponent(item) {
-    item.childNodes.forEach(child => {
+    (item.childNodes || []).forEach(child => {
       child._component = this;
-      child._element = this.#currentElement;
+      child._element = this.#element;
       if (!child.component) {
         Object.defineProperty(child, "component", {
           get: () => {
-            this.#currentElement = child._element;
+            this.#element = child._element;
             return child._component;
           }
         });
@@ -63,14 +100,36 @@ export class Component {
   }
 
   reload() {
-    this.#elements.forEach(element => {
-      this.#currentElement = element;
-      const template = this.render(element);
-      const vDom = new VirtualDom();
-      vDom.load(template);
-      vDom.apply(element);
-      this.#assignComponent(element);
-      this.#childs.forEach(child => child.component.reload());
+    const template = this.render(this.#element);
+    const vDom = new VirtualDom();
+    vDom.load(template);
+    vDom.apply(this.#element);
+    this.#childs.forEach(child => {
+      const { selector, component, instances } = child;
+      instances.forEach(e => {
+        if (e instanceof Component) {
+          e.#resetInUse();
+        }
+      });
+      this.#element.querySelectorAll(selector).forEach(element => {
+        const instance = this.#instanceComponent(element, component);
+        if (instance) {
+          if (!instances.includes(instance)) {
+            instances.push(instance);
+          }
+          instance.#markAsInUse();
+          instance.show(element);
+        }
+      });
+      const remove = [];
+      instances.forEach((e, i) => {
+        if (e instanceof Component) {
+          if (!e.#checkInUse()) {
+            remove.push(i);
+          }
+        }
+      });
+      remove.forEach(i => instances.splice(i, 1));
     });
     this.onReload();
   }

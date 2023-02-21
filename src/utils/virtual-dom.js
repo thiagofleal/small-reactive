@@ -28,7 +28,7 @@ function diffAttributes(template, element) {
 	}
 }
 
-function diff(template, element, onAdd, onRemove, onAlter) {
+function diff(template, element) {
 	const domNodes = Array.prototype.slice.call(element.childNodes);
 	const templateNodes = Array.prototype.slice.call(template.childNodes);
 	let count = domNodes.length - templateNodes.length;
@@ -37,21 +37,18 @@ function diff(template, element, onAdd, onRemove, onAlter) {
 		for (; count > 0; count--) {
 			const child = domNodes[domNodes.length - count];
 			domNodes[domNodes.length - count].parentNode.removeChild(child);
-			onRemove(child);
 		}
 	}
 	templateNodes.forEach((node, index) => {
 		if (!domNodes[index]) {
 			const child = node.cloneNode(true);
 			element.appendChild(child);
-			onAdd(child);
 			return;
 		}
 		if (getNodeType(node) !== getNodeType(domNodes[index])) {
 			const child = node.cloneNode(true);
 			const current = domNodes[index];
 			domNodes[index].parentNode.replaceChild(child, current);
-			onAlter(current, child);
 			return;
 		}
 		const templateContent = getNodeContent(node);
@@ -64,7 +61,7 @@ function diff(template, element, onAdd, onRemove, onAlter) {
 		}
 		if (domNodes[index].childNodes.length < 1 && node.childNodes.length > 0) {
 			const fragment = document.createDocumentFragment();
-			diff(node, fragment, onAdd, onRemove, onAlter);
+			diff(node, fragment);
 			domNodes[index].appendChild(fragment);
 			return;
 		}
@@ -78,21 +75,11 @@ function diff(template, element, onAdd, onRemove, onAlter) {
 export class VirtualDom {
 	#template = null;
 
-	addElement$ = new Subject();
-	removeElement$ = new Subject();
-	alterElement$ = new Subject();
-
 	load(template) {
 		this.#template = parseHTML(template);
 	}
 
 	apply(element) {
-		diff(
-			this.#template,
-			element,
-			child => this.addElement$.next(child),
-			child => this.addElement$.next(child),
-			(previous, current) => this.addElement$.next({ previous, current })
-		);
+		diff(this.#template, element);
 	}
 }
