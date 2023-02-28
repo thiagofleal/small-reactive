@@ -76,6 +76,10 @@ function diff(template, element) {
 export class VirtualDom {
 	#template = null;
 
+	get template() {
+		return this.#template;
+	}
+
 	load(template) {
 		this.#template = parseHTML(template);
 	}
