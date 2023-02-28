@@ -1,26 +1,34 @@
 import { Observable } from "./observable.js";
 
 export class Subject extends Observable {
+	#observers = {};
+	#nextIndex = 0;
+
+	#forEach(callback) {
+		for (const key in this.#observers) {
+			callback(this.#observers[key]);
+		}
+	}
+
 	constructor() {
 		super(observer => {
-			this.observers.push(observer);
+			const index = this.#nextIndex++;
+			this.#observers[index] = observer;
 			return () => {
-				const index = this.observers.indexOf(observer);
-				this.observers.splice(index, 1);
+				delete this.#observers[index];
 			};
 		});
-		this.observers = [];
 	}
 
 	next(value) {
-		this.observers.forEach(observer => observer.next(value));
+		this.#forEach(observer => observer.next(value));
 	}
 
 	error(err) {
-		this.observers.forEach(observer => observer.error(err));
+		this.#forEach(observer => observer.error(err));
 	}
 
 	complete() {
-		this.observers.forEach(observer => observer.complete());
+		this.#forEach(observer => observer.complete());
 	}
 }
