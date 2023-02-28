@@ -11,3 +11,14 @@ export function getAllAttributesFrom(element) {
 	});
 	return attributes;
 }
+
+export function randomString(length, chars) {
+	if (chars === undefined) {
+		chars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789"
+	}
+	let ret = "";
+	for (let i = 0; i < length; i++) {
+		ret += chars.charAt(Math.floor(Math.random() * chars.length));
+	}
+	return ret;
+}
