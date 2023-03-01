@@ -1,3 +1,4 @@
+import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
 
 export class Component {
@@ -6,6 +7,7 @@ export class Component {
   #childs = [];
   #onShowCallbacks = [];
   #inUse = false;
+  #id = null;
 
   constructor(props) {
     if (props && typeof props === "object") {
@@ -20,6 +22,7 @@ export class Component {
         });
       }
     }
+    this.#id = randomString(15);
   }
 
   get element() {
@@ -65,12 +68,30 @@ export class Component {
       return instance;
     }
     return null;
-}
+  }
+
+  #bindEvents(element) {
+    if (element instanceof HTMLElement) {
+      const attributes = getAllAttributesFrom(element);
+      const prefix = "event:";
+
+      for (const key in attributes) {
+        if (key.startsWith(prefix)) {
+          const event = key.substring(prefix.length);
+          element.addEventListener(event, event => {
+            new Function("event", attributes[key]).call(this, event);
+          });
+        }
+      }
+      element.childNodes.forEach(e => this.#bindEvents(e));
+    }
+  }
 
   show(element) {
     this.#element = element;
     this.reload();
     this.#assignComponent(element);
+    this.#bindEvents(element);
     if (!element.component) {
       element.component = this;
       this.onConnect();
@@ -115,6 +136,7 @@ export class Component {
     const template = this.render(this.#element);
     const vDom = new VirtualDom();
     vDom.load(template);
+    vDom.ignore = this.#childs.map(e => e.selector);
     vDom.apply(this.#element);
     this.#childs.forEach(child => {
       const { selector, component, instances } = child;

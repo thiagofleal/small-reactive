@@ -27,7 +27,7 @@ function diffAttributes(template, element) {
 	}
 }
 
-function diff(template, element) {
+function diff(template, element, ignore) {
 	const domNodes = Array.prototype.slice.call(element.childNodes);
 	const templateNodes = Array.prototype.slice.call(template.childNodes);
 	let count = domNodes.length - templateNodes.length;
@@ -50,6 +50,12 @@ function diff(template, element) {
 			domNodes[index].parentNode.replaceChild(child, current);
 			return;
 		}
+		if (node instanceof HTMLElement) {
+			if (ignore.some(i => node.matches(i))) {
+				diffAttributes(node, domNodes[index]);
+				return;
+			}
+		}
 		const templateContent = getNodeContent(node);
 		if (templateContent && templateContent !== getNodeContent(domNodes[index])) {
 			domNodes[index].textContent = templateContent;
@@ -60,12 +66,12 @@ function diff(template, element) {
 		}
 		if (domNodes[index].childNodes.length < 1 && node.childNodes.length > 0) {
 			const fragment = document.createDocumentFragment();
-			diff(node, fragment);
+			diff(node, fragment, ignore);
 			domNodes[index].appendChild(fragment);
 			return;
 		}
 		if (node.childNodes.length > 0) {
-			diff(node, domNodes[index]);
+			diff(node, domNodes[index], ignore);
 		}
 		if (node instanceof HTMLElement && domNodes[index] instanceof HTMLElement) {
 			diffAttributes(node, domNodes[index]);
@@ -75,9 +81,19 @@ function diff(template, element) {
 
 export class VirtualDom {
 	#template = null;
+	#ignore = [];
 
 	get template() {
 		return this.#template;
+	}
+
+	get ignore() {
+		return this.#ignore;
+	}
+	set ignore(value) {
+		if (Array.isArray(value) && value.every(e => typeof e === "string")) {
+			this.#ignore = value;
+		}
 	}
 
 	load(template) {
@@ -85,6 +101,6 @@ export class VirtualDom {
 	}
 
 	apply(element) {
-		diff(this.#template, element);
+		diff(this.#template, element, this.#ignore);
 	}
 }
