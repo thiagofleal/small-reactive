@@ -71,19 +71,22 @@ export class Component {
   }
 
   #bindEvents(element) {
-    if (element instanceof HTMLElement) {
-      const attributes = getAllAttributesFrom(element);
-      const prefix = "event:";
-
-      for (const key in attributes) {
-        if (key.startsWith(prefix)) {
-          const event = key.substring(prefix.length);
-          element.addEventListener(event, event => {
-            new Function("event", attributes[key]).call(this, event);
-          });
+    if (element && !element.binded) {
+      if (element instanceof HTMLElement) {
+        const attributes = getAllAttributesFrom(element);
+        const prefix = "event:";
+  
+        for (const key in attributes) {
+          if (key.startsWith(prefix)) {
+            const event = key.substring(prefix.length);
+            element.addEventListener(event, event => {
+              new Function("event", attributes[key]).call(this, event);
+            });
+          }
         }
+        element.binded = true;
+        element.childNodes.forEach(e => this.#bindEvents(e));
       }
-      element.childNodes.forEach(e => this.#bindEvents(e));
     }
   }
 
