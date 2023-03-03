@@ -8,6 +8,7 @@ export class Component {
   #onShowCallbacks = [];
   #inUse = false;
   #id = null;
+  #children = null;
 
   constructor(props) {
     if (props && typeof props === "object") {
@@ -29,6 +30,10 @@ export class Component {
     return this.#element;
   }
 
+  get children() {
+    return this.#children;
+  }
+
   render() { return ""; }
   onShow() {}
   onReload() {}
@@ -47,6 +52,9 @@ export class Component {
       return false;
     }
     return true;
+  }
+  #setChildren(children) {
+    this.#children = children;
   }
 
   #instanceComponent(element, seed, ...args) {
@@ -71,7 +79,8 @@ export class Component {
   }
 
   #bindEvents(element) {
-    if (element && !element.binded) {
+    if (element && !element.initiated) {
+
       if (element instanceof HTMLElement) {
         const attributes = getAllAttributesFrom(element);
         const prefix = "event:";
@@ -84,7 +93,7 @@ export class Component {
             });
           }
         }
-        element.binded = true;
+        element.initiated = true;
         element.childNodes.forEach(e => this.#bindEvents(e));
       }
     }
@@ -148,12 +157,14 @@ export class Component {
           e.#resetInUse();
         }
       });
-      this.#element.querySelectorAll(selector).forEach(element => {
+      const elements = vDom.template.querySelectorAll(selector);
+      this.#element.querySelectorAll(selector).forEach((element, index) => {
         const instance = this.#instanceComponent(element, component);
         if (instance) {
           if (!instances.includes(instance)) {
             instances.push(instance);
           }
+          instance.#setChildren(elements[index]);
           instance.#markAsInUse();
           instance.show(element);
         }
