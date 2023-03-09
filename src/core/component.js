@@ -99,20 +99,20 @@ export class Component {
             });
           }
         }
-        element.initiated = true;
-      }
-      if (element.component) {
-        const prefix = "bind:";
-
-        for (const key in attributes) {
-          if (key.startsWith(prefix)) {
-            this.#onReloadCallbacks.push(() => {
-              const property = key.substring(prefix.length);
-              element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
-                .call(this);
-            });
+        if (element.component) {
+          const prefix = "bind:";
+  
+          for (const key in attributes) {
+            if (key.startsWith(prefix)) {
+              this.#onReloadCallbacks.push(() => {
+                const property = key.substring(prefix.length);
+                element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
+                  .call(this);
+              });
+            }
           }
         }
+        element.initiated = true;
       }
       if (!this.#isToIgnore(element)) {
         element.childNodes.forEach(e => this.#bindEvents(e));
