@@ -6,6 +6,7 @@ export class Component {
   #element = [];
   #childs = [];
   #onShowCallbacks = [];
+  #onReloadCallbacks = [];
   #inUse = false;
   #id = null;
   #children = null;
@@ -17,8 +18,10 @@ export class Component {
         Object.defineProperty(this, key, {
           get: () => this.#properties[key],
           set: value => {
-            this.#properties[key] = value;
-            this.reload();
+            if (this.#properties[key] !== value) {
+              this.#properties[key] = value;
+              this.reload();
+            }
           }
         });
       }
@@ -78,13 +81,16 @@ export class Component {
     return null;
   }
 
-  #bindEvents(element) {
-    if (element && !element.initiated) {
+  #isToIgnore(element) {
+    return this.#childs.map(e => e.selector).some(e => element.matches(e));
+  }
 
-      if (element instanceof HTMLElement) {
-        const attributes = getAllAttributesFrom(element);
+  #bindEvents(element) {
+    if (element instanceof HTMLElement) {
+      const attributes = getAllAttributesFrom(element);
+      if (!element.initiated) {
         const prefix = "event:";
-  
+
         for (const key in attributes) {
           if (key.startsWith(prefix)) {
             const event = key.substring(prefix.length);
@@ -94,6 +100,21 @@ export class Component {
           }
         }
         element.initiated = true;
+      }
+      if (element.component) {
+        const prefix = "bind:";
+
+        for (const key in attributes) {
+          if (key.startsWith(prefix)) {
+            this.#onReloadCallbacks.push(() => {
+              const property = key.substring(prefix.length);
+              element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
+                .call(this);
+            });
+          }
+        }
+      }
+      if (!this.#isToIgnore(element)) {
         element.childNodes.forEach(e => this.#bindEvents(e));
       }
     }
@@ -103,7 +124,6 @@ export class Component {
     this.#element = element;
     this.reload();
     this.#assignComponent(element);
-    this.#bindEvents(element);
     if (!element.component) {
       element.component = this;
       this.onConnect();
@@ -129,19 +149,12 @@ export class Component {
   }
 
   #assignComponent(item) {
-    (item.childNodes || []).forEach(child => {
-      child._component = this;
-      child._element = this.#element;
-      if (!child.component) {
-        Object.defineProperty(child, "component", {
-          get: () => {
-            this.#element = child._element;
-            return child._component;
-          }
-        });
+    if (item instanceof HTMLElement) {
+      if (!this.#isToIgnore(item)) {
+        item.component = this;
+        item.childNodes.forEach(child => this.#assignComponent(child));
       }
-      this.#assignComponent(child);
-    });
+    }
   }
 
   reload() {
@@ -167,6 +180,7 @@ export class Component {
           instance.#setChildren(elements[index]);
           instance.#markAsInUse();
           instance.show(element);
+          element.componentInstance = instance;
         }
       });
       const remove = [];
@@ -179,6 +193,8 @@ export class Component {
       });
       remove.forEach(i => instances.splice(i, 1));
     });
+    this.element.childNodes.forEach(e => this.#bindEvents(e));
+    this.#onReloadCallbacks.forEach(e => e());
     this.onReload();
   }
 }
