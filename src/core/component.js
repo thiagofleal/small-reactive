@@ -95,7 +95,7 @@ export class Component {
           if (key.startsWith(prefix)) {
             const event = key.substring(prefix.length);
             element.addEventListener(event, event => {
-              new Function("event", attributes[key]).call(this, event);
+              new Function("event", "element", attributes[key]).call(this, event, element);
             });
           }
         }
