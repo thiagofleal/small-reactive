@@ -1,6 +1,6 @@
 import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
-import { BehaviorSubject, map } from "../../rx.js";
+import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
 
 export class Component {
@@ -13,9 +13,11 @@ export class Component {
   #id = null;
   #children = null;
   #children$ = new BehaviorSubject([]);
+  #components$ = new BehaviorSubject([]);
   #styles = [];
   #deepStyles = [];
-
+  #subscription = new Subscription();
+  
   constructor(props) {
     if (props && typeof props === "object") {
       for (const key in props) {
@@ -58,6 +60,7 @@ export class Component {
     if (!this.#inUse) {
       document.head.querySelectorAll(`style[component="${this.#id}"]`).forEach(e => e.remove());
       this.onDisconnect();
+      this.#subscription.unsubscribe();
       return false;
     }
     return true;
@@ -200,6 +203,48 @@ export class Component {
     return this.#children$.pipe(map(e => e.filter(i => i.matches(selector))));
   }
 
+  observeChildrenComponents(ref) {
+    return this.#components$.pipe(map(e => e.filter(i => i.element.matches(`[ref="${ref}"]`))));
+  }
+
+  #childrenReference(refs, map) {
+    Object.keys(refs).forEach(key => {
+      const name = key;
+      const ref = refs[key];
+      let value = null;
+      this.#subscription.add(
+        this.observeChildrenComponents(ref).subscribe(i => value = map(i))
+      );
+      Object.defineProperty(this, name, {
+        get: () => value
+      });
+    });
+  }
+
+  childrenReference(refs) {
+    this.#childrenReference(refs, i => {
+      return (i || []).map(e => e.component);
+    });
+  }
+
+  childReference(refs) {
+    this.#childrenReference(refs, i => {
+      return i[0] ? i[0].component : undefined;
+    });
+  }
+
+  eventEmitter(event) {
+    return {
+      emit: data => {
+        this.emit(event, data);
+      }
+    };
+  }
+
+  emit(event, data) {
+    this.#element.dispatchEvent(new CustomEvent(event, data))
+  }
+
   reload() {
     const template = this.render(this.#element);
     const vDom = new VirtualDom();
@@ -210,7 +255,7 @@ export class Component {
     });
 
     if (changes) {
-      this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
+      const children = [];
       this.#childs.forEach(child => {
         const { selector, component, instances } = child;
         instances.forEach(e => {
@@ -229,6 +274,9 @@ export class Component {
             instance.#markAsInUse();
             instance.show(element);
             element.componentInstance = instance;
+            children.push({
+              element, component: instance
+            });
           }
         });
         const remove = [];
@@ -241,6 +289,8 @@ export class Component {
         });
         remove.forEach(i => instances.splice(i, 1));
       });
+      this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
+      this.#components$.next(Array.from(children));
       this.element.childNodes.forEach(e => this.#bindEvents(e));
     }
     this.#onReloadCallbacks.forEach(e => e());
