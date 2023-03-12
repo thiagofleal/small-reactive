@@ -1,5 +1,6 @@
 import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
+import { BehaviorSubject, map } from "../../rx.js";
 
 export class Component {
   #properties = {};
@@ -10,6 +11,7 @@ export class Component {
   #inUse = false;
   #id = null;
   #children = null;
+  #children$ = new BehaviorSubject([]);
 
   constructor(props) {
     if (props && typeof props === "object") {
@@ -85,6 +87,15 @@ export class Component {
     return this.#childs.map(e => e.selector).some(e => element.matches(e));
   }
 
+  #assignComponent(item) {
+    if (item instanceof HTMLElement) {
+      if (!this.#isToIgnore(item)) {
+        item.component = this;
+        item.childNodes.forEach(child => this.#assignComponent(child));
+      }
+    }
+  }
+
   #bindEvents(element) {
     if (element instanceof HTMLElement) {
       const attributes = getAllAttributesFrom(element);
@@ -148,13 +159,12 @@ export class Component {
     }
   }
 
-  #assignComponent(item) {
-    if (item instanceof HTMLElement) {
-      if (!this.#isToIgnore(item)) {
-        item.component = this;
-        item.childNodes.forEach(child => this.#assignComponent(child));
-      }
-    }
+  observeChildren(ref) {
+    return this.observeChildrenSelector(`[ref="${ref}"]`);
+  }
+
+  observeChildrenSelector(selector) {
+    return this.#children$.pipe(map(e => e.filter(i => i.matches(selector))));
   }
 
   reload() {
@@ -162,38 +172,44 @@ export class Component {
     const vDom = new VirtualDom();
     vDom.load(template);
     vDom.ignore = this.#childs.map(e => e.selector);
-    vDom.apply(this.#element);
-    this.#childs.forEach(child => {
-      const { selector, component, instances } = child;
-      instances.forEach(e => {
-        if (e instanceof Component) {
-          e.#resetInUse();
-        }
-      });
-      const elements = vDom.template.querySelectorAll(selector);
-      this.#element.querySelectorAll(selector).forEach((element, index) => {
-        const instance = this.#instanceComponent(element, component);
-        if (instance) {
-          if (!instances.includes(instance)) {
-            instances.push(instance);
-          }
-          instance.#setChildren(elements[index]);
-          instance.#markAsInUse();
-          instance.show(element);
-          element.componentInstance = instance;
-        }
-      });
-      const remove = [];
-      instances.forEach((e, i) => {
-        if (e instanceof Component) {
-          if (!e.#checkInUse()) {
-            remove.push(i);
-          }
-        }
-      });
-      remove.forEach(i => instances.splice(i, 1));
+    const changes = vDom.apply(this.#element, {
+      component: this.#id
     });
-    this.element.childNodes.forEach(e => this.#bindEvents(e));
+
+    if (changes) {
+      this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
+      this.#childs.forEach(child => {
+        const { selector, component, instances } = child;
+        instances.forEach(e => {
+          if (e instanceof Component) {
+            e.#resetInUse();
+          }
+        });
+        const elements = vDom.template.querySelectorAll(selector);
+        this.#element.querySelectorAll(selector).forEach((element, index) => {
+          const instance = this.#instanceComponent(element, component);
+          if (instance) {
+            if (!instances.includes(instance)) {
+              instances.push(instance);
+            }
+            instance.#setChildren(elements[index]);
+            instance.#markAsInUse();
+            instance.show(element);
+            element.componentInstance = instance;
+          }
+        });
+        const remove = [];
+        instances.forEach((e, i) => {
+          if (e instanceof Component) {
+            if (!e.#checkInUse()) {
+              remove.push(i);
+            }
+          }
+        });
+        remove.forEach(i => instances.splice(i, 1));
+      });
+      this.element.childNodes.forEach(e => this.#bindEvents(e));
+    }
     this.#onReloadCallbacks.forEach(e => e());
     this.onReload();
   }
