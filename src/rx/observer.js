@@ -21,15 +21,21 @@ export class Observer {
 
 	error(err) {
 		if (this.#subscribed) {
-			this.onError(err);
-			this.unsubscribe();
+			try {
+				this.onError(err);
+			} finally {
+				this.unsubscribe();
+			}
 		}
 	}
 
 	complete() {
 		if (this.#subscribed) {
-			this.onComplete();
-			this.unsubscribe();
+			try {
+				this.onComplete();
+			} finally {
+				this.unsubscribe();
+			}
 		}
 	}
 
