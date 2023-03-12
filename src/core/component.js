@@ -1,6 +1,7 @@
 import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
 import { BehaviorSubject, map } from "../../rx.js";
+import { Style } from "./style.js";
 
 export class Component {
   #properties = {};
@@ -12,6 +13,8 @@ export class Component {
   #id = null;
   #children = null;
   #children$ = new BehaviorSubject([]);
+  #styles = [];
+  #deepStyles = [];
 
   constructor(props) {
     if (props && typeof props === "object") {
@@ -53,6 +56,7 @@ export class Component {
   }
   #checkInUse() {
     if (!this.#inUse) {
+      document.head.querySelectorAll(`style[component="${this.#id}"]`).forEach(e => e.remove());
       this.onDisconnect();
       return false;
     }
@@ -134,14 +138,43 @@ export class Component {
   show(element) {
     this.#element = element;
     this.reload();
-    this.#assignComponent(element);
     if (!element.component) {
-      element.component = this;
+      this.#assignComponent(element);
+      this.#styles.forEach(style => {
+        Style.create(style, {
+          prefix: "",
+          posfix: `[component=${this.#id}]`
+        }, {
+          component: this.#id
+        });
+      })
+      this.#deepStyles.forEach(style => {
+        Style.create(style, [
+          {
+            prefix: "",
+            posfix: `[component=${this.#id}]`
+          },
+          {
+            prefix: `[component=${this.#id}] `,
+            posfix: ""
+          }
+        ], {
+          component: this.#id
+        });
+      });
       this.onConnect();
     }
     this.#onShowCallbacks.forEach(e => e());
     this.onShow();
   }
+
+	useStyle(style) {
+    this.#styles.push(style);
+	}
+
+	useDeepStyle(style) {
+    this.#deepStyles.push(style);
+	}
 
   appendChild(selector, component) {
     this.#childs.push({ selector, component, instances: [] });
