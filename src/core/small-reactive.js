@@ -1,18 +1,23 @@
 import { Component } from "./component.js";
 import { Injectable } from "./injectable.js";
+import { Service } from "./service.js";
 
 export class SmallReactive {
   static async start(opts, ...args) {
     let { target, component, inject } = opts;
 
 		if (Array.isArray(inject)) {
-			for (const service of inject) {
+      const services = await Promise.all(inject.map(async service => {
 				if (service instanceof Promise) {
-					Injectable.register(await service);
-				} else {
-					Injectable.register(service);
+					service = await service;
 				}
-			}
+        return service;
+      }));
+      services.forEach(service => {
+        if (typeof service === "function") {
+          Injectable.register(service);
+        }
+      });
 		}
     if (component instanceof Promise) {
       component = await component;
