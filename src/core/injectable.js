@@ -2,22 +2,22 @@ export class Injectable {
   static services = [];
 
   static register(classRef, ...args) {
-    const ref = Injectable.services.find(i => i.classRef === classRef);
+    const ref = this.services.find(i => i.classRef === classRef);
 
     if (!ref) {
       const value = new classRef(...args);
       value.onRegister();
-      Injectable.services.push({ classRef, value });
+      this.services.push({ classRef, value });
       value.notify({
         name: "inject-create",
         group: "injection",
-        from: Injectable
+        from: this
       });
     }
   }
 
   static get(classRef) {
-    const item = Injectable.services.find(i => i.classRef === classRef);
+    const item = this.services.find(i => i.classRef === classRef);
 
     if (item) {
       item.value.onGet();
