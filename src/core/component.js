@@ -17,7 +17,7 @@ export class Component {
   #styles = [];
   #deepStyles = [];
   #subscription = new Subscription();
-  
+
   constructor(props) {
     if (props && typeof props === "object") {
       for (const key in props) {
@@ -119,7 +119,7 @@ export class Component {
         }
         if (element.component) {
           const prefix = "bind:";
-  
+
           for (const key in attributes) {
             if (key.startsWith(prefix)) {
               this.#onReloadCallbacks.push(() => {
@@ -242,6 +242,10 @@ export class Component {
   }
 
   emit(event, data) {
+    if (!data) data = {};
+    if (!data.detail) {
+      data = { detail: data };
+    }
     this.#element.dispatchEvent(new CustomEvent(event, data))
   }
 
