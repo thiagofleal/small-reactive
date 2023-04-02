@@ -1,6 +1,5 @@
 import { Component } from "./component.js";
 import { Injectable } from "./injectable.js";
-import { Service } from "./service.js";
 
 export class SmallReactive {
   static async start(opts, ...args) {
