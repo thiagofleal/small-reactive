@@ -1,4 +1,4 @@
-import { Constructable } from "../utils";
+import { Constructable } from "../utils/constructable";
 import { Service } from "./service";
 
 export class Injectable {
