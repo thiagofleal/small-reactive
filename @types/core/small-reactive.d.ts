@@ -4,8 +4,8 @@ import { Service } from "./service";
 
 type StartOptions = {
   target:     HTMLElement | string,
-  component:  Constructable<Component>,
-  inject?:    Constructable<Service>
+  component:  Constructable<Component> | Component | (() => Component),
+  inject?:    Constructable<Service>[]
 };
 
 export class SmallReactive {
