@@ -1,5 +1,5 @@
 import { Component } from "./component"
-import { Constructable } from "../utils";
+import { Constructable } from "../utils/constructable";
 import { Service } from "./service";
 
 type StartOptions = {
