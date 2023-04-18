@@ -1,7 +1,7 @@
 import { Observable } from "../../rx";
 
 export class Component {
-  constructor(props?: Record<string, any>);
+  constructor();
 
   get element(): HTMLElement;
   get children(): HTMLElement;

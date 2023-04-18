@@ -18,21 +18,7 @@ export class Component {
   #deepStyles = [];
   #subscription = new Subscription();
 
-  constructor(props) {
-    if (props && typeof props === "object") {
-      for (const key in props) {
-        this.#properties[key] = props[key];
-        Object.defineProperty(this, key, {
-          get: () => this.#properties[key],
-          set: value => {
-            if (this.#properties[key] !== value) {
-              this.#properties[key] = value;
-              this.reload();
-            }
-          }
-        });
-      }
-    }
+  constructor() {
     this.#id = randomString(15);
   }
 
@@ -138,7 +124,29 @@ export class Component {
     }
   }
 
+  #initProperties(props) {
+    Object.keys(this).forEach(key => {
+      props[key] = this[key];
+      delete this[key];
+    });
+    if (props && typeof props === "object") {
+      for (const key in props) {
+        this.#properties[key] = props[key];
+        Object.defineProperty(this, key, {
+          get: () => this.#properties[key],
+          set: value => {
+            if (this.#properties[key] !== value) {
+              this.#properties[key] = value;
+              this.reload();
+            }
+          }
+        });
+      }
+    }
+  }
+
   show(element) {
+    this.#initProperties({});
     this.#element = element;
     this.reload();
     if (!element.component) {
