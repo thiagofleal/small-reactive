@@ -18,8 +18,26 @@ export class Component {
   #deepStyles = [];
   #subscription = new Subscription();
 
-  constructor() {
+  constructor(options) {
     this.#id = randomString(15);
+
+    if (options) {
+      if (options.children) {
+        this.setChilds(options.children);
+      }
+      if (options.style) {
+        if (!Array.isArray(options.style)) {
+          options.style = [ options.style ];
+        }
+        options.style.forEach(style => this.useStyle(style));
+      }
+      if (options.deepStyle) {
+        if (!Array.isArray(options.deepStyle)) {
+          options.deepStyle = [ options.deepStyle ];
+        }
+        options.deepStyle.forEach(deepStyle => this.useDeepStyle(deepStyle));
+      }
+    }
   }
 
   get element() {
