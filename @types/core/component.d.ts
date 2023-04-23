@@ -1,4 +1,5 @@
 import { Observable } from "../../rx";
+import { Service } from "./service";
 
 export type ChildDefinitionObject = { selector: string, component: Component };
 
@@ -37,5 +38,6 @@ export class Component {
     emit: (data: any) => void
   };
   emit(event: string, data: any): void;
+  inject<T extends Service>(classRef: Constructable<T>): T | undefined;
   reload(): void;
 }

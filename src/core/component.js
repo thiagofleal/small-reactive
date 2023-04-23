@@ -2,6 +2,8 @@ import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
 import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
+import { Module } from "./module.js";
+import { Injectable } from "./injectable.js";
 
 export class Component {
   #properties = {};
@@ -273,6 +275,15 @@ export class Component {
       data = { detail: data };
     }
     this.#element.dispatchEvent(new CustomEvent(event, data))
+  }
+
+  inject(service) {
+    const module = Module.getFromComponent(this.constructor);
+
+    if (module) {
+      return module.inject(service);
+    }
+    return Injectable.get(service);
   }
 
   reload() {
