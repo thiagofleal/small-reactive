@@ -5,6 +5,7 @@ import { Service } from "./service";
 export class Module {
   constructor(options?: {
     components?:  Component[]
+    imports?:     Module[]
     inject?:      (Constructable<Service>[] | {
       service:    Constructable<Service>[]
       args?:      any

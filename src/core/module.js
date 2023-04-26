@@ -6,6 +6,7 @@ export class Module {
 
   injectables = [];
   components = [];
+  modules = [];
 
   constructor(options) {
     if (!options) options = {};
@@ -20,6 +21,12 @@ export class Module {
         options.inject = [ options.inject ];
       }
       this.injectables = options.inject;
+    }
+    if (options.imports) {
+      if (!Array.isArray(options.imports)) {
+        options.imports = [ options.imports ];
+      }
+      this.modules = options.imports.map(e => Module.#modules[e]);
     }
   }
 
@@ -40,7 +47,20 @@ export class Module {
     return this.#mapComponents[component];
   }
 
+  getFromImports(service) {
+    for (let i = 0; i < this.modules.length; i++) {
+      const module = this.modules[i];
+      const instance = Injectable.getFrom(service, module);
+
+      if (instance) {
+        return instance;
+      }
+    }
+  }
+
   inject(service) {
-    return Injectable.getFrom(service, this) || Injectable.get(service);
+    return Injectable.getFrom(service, this)
+    || this.getFromImports(service)
+    || Injectable.get(service);
   }
 }

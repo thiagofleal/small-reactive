@@ -1,37 +1,45 @@
 export class Injectable {
-  static #services = {};
+  static #services = new Map();
 
   static registerIn(classRef, from, args) {
-    if (!this.#services[from]) {
-      this.#services[from] = [];
+    if (!this.#services.has(from)) {
+      this.#services.set(from, new Map());
     }
     if (typeof classRef === "object") {
       args = classRef.args;
       classRef = classRef.service;
     }
-    const ref = this.#services[from].find(i => i.classRef === classRef);
+    const mapFrom = this.#services.get(from);
 
-    if (!ref) {
-      const value = new classRef(args);
-      value.onRegister();
-      this.#services[from].push({ classRef, value });
-      value.notify({
-        name: "inject-create",
-        group: "injection",
-        from
-      });
+    if (mapFrom) {
+      const ref = mapFrom.get(classRef);
+
+      if (!ref) {
+        const value = new classRef(args);
+        value.onRegister();
+        mapFrom.set(classRef, value);
+        value.notify({
+          name: "inject-create",
+          group: "injection",
+          from
+        });
+      }
     }
   }
 
   static getFrom(classRef, from) {
-    if (!this.#services[from]) {
-      this.#services[from] = [];
+    if (!this.#services.has(from)) {
+      this.#services.set(from, new Map());
     }
-    const item = this.#services[from].find(i => i.classRef === classRef);
+    const mapFrom = this.#services.get(from);
 
-    if (item) {
-      item.value.onGet();
-      return item.value;
+    if (mapFrom) {
+      const item = mapFrom.get(classRef);
+
+      if (item) {
+        item.onGet();
+        return item;
+      }
     }
   }
 
