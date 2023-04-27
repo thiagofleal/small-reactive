@@ -1,7 +1,16 @@
 import { Observable } from "../../rx";
+import { Service } from "./service";
+
+export type ChildDefinitionObject = { selector: string, component: Component };
+
+export type ComponentOptions = {
+  children?:  Record<string, Component> | ChildDefinitionObject[]
+  style?:     string | string[]
+  deepStyle?: string | string[]
+};
 
 export class Component {
-  constructor(props?: Record<string, any>);
+  constructor(opts?: ComponentOptions);
 
   get element(): HTMLElement;
   get children(): HTMLElement;
@@ -16,7 +25,7 @@ export class Component {
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
   appendChild(selector: string, component: Component): void;
-  setChilds(childs: Record<string, Component> | { selector: string, component: Component }[]): void;
+  setChilds(childs: Record<string, Component> | ChildDefinitionObject[]): void;
   observeChildren(ref: string): Observable<HTMLElement[]>;
   observeChildrenSelector(selector: string): Observable<HTMLElement[]>;
   observeChildrenComponents(ref: string): Observable<{
@@ -29,5 +38,6 @@ export class Component {
     emit: (data: any) => void
   };
   emit(event: string, data: any): void;
+  inject<T extends Service>(classRef: Constructable<T>): T | undefined;
   reload(): void;
 }

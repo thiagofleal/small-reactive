@@ -2,6 +2,8 @@ import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
 import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
+import { Module } from "./module.js";
+import { Injectable } from "./injectable.js";
 
 export class Component {
   #properties = {};
@@ -18,22 +20,26 @@ export class Component {
   #deepStyles = [];
   #subscription = new Subscription();
 
-  constructor(props) {
-    if (props && typeof props === "object") {
-      for (const key in props) {
-        this.#properties[key] = props[key];
-        Object.defineProperty(this, key, {
-          get: () => this.#properties[key],
-          set: value => {
-            if (this.#properties[key] !== value) {
-              this.#properties[key] = value;
-              this.reload();
-            }
-          }
-        });
+  constructor(options) {
+    this.#id = randomString(15);
+
+    if (options) {
+      if (options.children) {
+        this.setChilds(options.children);
+      }
+      if (options.style) {
+        if (!Array.isArray(options.style)) {
+          options.style = [ options.style ];
+        }
+        options.style.forEach(style => this.useStyle(style));
+      }
+      if (options.deepStyle) {
+        if (!Array.isArray(options.deepStyle)) {
+          options.deepStyle = [ options.deepStyle ];
+        }
+        options.deepStyle.forEach(deepStyle => this.useDeepStyle(deepStyle));
       }
     }
-    this.#id = randomString(15);
   }
 
   get element() {
@@ -138,7 +144,29 @@ export class Component {
     }
   }
 
+  #initProperties(props) {
+    Object.keys(this).forEach(key => {
+      props[key] = this[key];
+      delete this[key];
+    });
+    if (props && typeof props === "object") {
+      for (const key in props) {
+        this.#properties[key] = props[key];
+        Object.defineProperty(this, key, {
+          get: () => this.#properties[key],
+          set: value => {
+            if (this.#properties[key] !== value) {
+              this.#properties[key] = value;
+              this.reload();
+            }
+          }
+        });
+      }
+    }
+  }
+
   show(element) {
+    this.#initProperties({});
     this.#element = element;
     this.reload();
     if (!element.component) {
@@ -247,6 +275,15 @@ export class Component {
       data = { detail: data };
     }
     this.#element.dispatchEvent(new CustomEvent(event, data))
+  }
+
+  inject(service) {
+    const module = Module.getFromComponent(this.constructor);
+
+    if (module) {
+      return module.inject(service);
+    }
+    return Injectable.get(service);
   }
 
   reload() {
