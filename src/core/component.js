@@ -362,7 +362,7 @@ export class Component {
         remove.forEach(i => instances.splice(i, 1));
       });
       this.#directives.forEach(({ directive, selector }) => {
-        this.element.querySelectorAll(`[component=${this.#id}][${ selector }]`).forEach(element => {
+        this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
           if (directive instanceof Directive) {
             directive.init(element, selector);
           }
