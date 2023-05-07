@@ -3,9 +3,11 @@ import { Injectable } from "./injectable.js";
 export class Module {
   static #modules = {};
   static #mapComponents = {};
+  static #mapDirectives = {};
 
   injectables = [];
   components = [];
+  directives = [];
   modules = [];
 
   constructor(options) {
@@ -15,6 +17,12 @@ export class Module {
         options.components = [ options.components ];
       }
       this.components = options.components;
+    }
+    if (options.directives) {
+      if (!Array.isArray(options.directives)) {
+        options.directives = [ options.directives ];
+      }
+      this.directives = options.directives;
     }
     if (options.inject) {
       if (!Array.isArray(options.inject)) {
@@ -38,6 +46,9 @@ export class Module {
     instance.components.forEach(component => {
       this.#mapComponents[component] = instance;
     });
+    instance.directives.forEach(directivet => {
+      this.#mapDirectives[directivet] = instance;
+    });
     instance.injectables.forEach(injectable => {
       Injectable.registerIn(injectable, instance);
     });
@@ -45,6 +56,10 @@ export class Module {
 
   static getFromComponent(component) {
     return this.#mapComponents[component];
+  }
+
+  static getFromDirective(directive) {
+    return this.#mapDirectives[directive];
   }
 
   getFromImports(service) {
