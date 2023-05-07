@@ -1,3 +1,5 @@
+import { Module, Injectable } from "../../core.js";
+
 export class Directive {
   #component = null;
 
@@ -18,5 +20,14 @@ export class Directive {
       const value = element.getAttribute(selector);
       this.apply(element, value, this.component);
     }
+  }
+
+  inject(service) {
+    const module = Module.getFromDirective(this.constructor);
+
+    if (module) {
+      return module.inject(service);
+    }
+    return Injectable.get(service);
   }
 }
