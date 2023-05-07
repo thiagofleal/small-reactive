@@ -8,7 +8,7 @@ import { Injectable } from "./injectable.js";
 export class Component {
   #properties = {};
   #element = [];
-  #childs = [];
+  #componentChildren = [];
   #onShowCallbacks = [];
   #onReloadCallbacks = [];
   #inUse = false;
@@ -25,7 +25,7 @@ export class Component {
 
     if (options) {
       if (options.children) {
-        this.setChilds(options.children);
+        this.setChildren(options.children);
       }
       if (options.style) {
         if (!Array.isArray(options.style)) {
@@ -97,7 +97,7 @@ export class Component {
   }
 
   #isToIgnore(element) {
-    return this.#childs.map(e => e.selector).some(e => element.matches(e));
+    return this.#componentChildren.map(e => e.selector).some(e => element.matches(e));
   }
 
   #assignComponent(item) {
@@ -208,16 +208,16 @@ export class Component {
 	}
 
   appendChild(selector, component) {
-    this.#childs.push({ selector, component, instances: [] });
+    this.#componentChildren.push({ selector, component, instances: [] });
   }
 
-  setChilds(childs) {
-    if (typeof childs === "object") {
-      if (Array.isArray(childs)) {
-        childs.forEach(e => this.appendChild(e.selector, e.component));
+  setChildren(children) {
+    if (typeof children === "object") {
+      if (Array.isArray(children)) {
+        children.forEach(e => this.appendChild(e.selector, e.component));
       } else {
-        for (const key in childs) {
-          this.appendChild(key, childs[key]);
+        for (const key in children) {
+          this.appendChild(key, children[key]);
         }
       }
     }
@@ -290,14 +290,14 @@ export class Component {
     const template = this.render(this.#element);
     const vDom = new VirtualDom();
     vDom.load(template);
-    vDom.ignore = this.#childs.map(e => e.selector);
+    vDom.ignore = this.#componentChildren.map(e => e.selector);
     const changes = vDom.apply(this.#element, {
       component: this.#id
     });
 
     if (changes) {
       const children = [];
-      this.#childs.forEach(child => {
+      this.#componentChildren.forEach(child => {
         const { selector, component, instances } = child;
         instances.forEach(e => {
           if (e instanceof Component) {

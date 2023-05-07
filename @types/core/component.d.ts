@@ -25,7 +25,7 @@ export class Component {
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
   appendChild(selector: string, component: Component): void;
-  setChilds(childs: Record<string, Component> | ChildDefinitionObject[]): void;
+  setChildren(children: Record<string, Component> | ChildDefinitionObject[]): void;
   observeChildren(ref: string): Observable<HTMLElement[]>;
   observeChildrenSelector(selector: string): Observable<HTMLElement[]>;
   observeChildrenComponents(ref: string): Observable<{
