@@ -4,11 +4,13 @@ import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
 import { Module } from "./module.js";
 import { Injectable } from "./injectable.js";
+import { Directive } from "./directive.js";
 
 export class Component {
   #properties = {};
   #element = [];
   #componentChildren = [];
+  #directiveChildren = [];
   #onShowCallbacks = [];
   #onReloadCallbacks = [];
   #inUse = false;
@@ -26,6 +28,9 @@ export class Component {
     if (options) {
       if (options.children) {
         this.setChildren(options.children);
+      }
+      if (options.directives) {
+        this.setDirectives(options.directives);
       }
       if (options.style) {
         if (!Array.isArray(options.style)) {
@@ -211,6 +216,20 @@ export class Component {
     this.#componentChildren.push({ selector, component, instances: [] });
   }
 
+  appendDirective(selector, directive) {
+    if (typeof directive === "function") {
+      try {
+        directive = new directive();
+      } catch(e) {
+        directive = directive();
+      }
+    }
+    if (directive instanceof Directive) {
+      directive.setComponent(this);
+      this.#directiveChildren.push({ selector, directive });
+    }
+  }
+
   setChildren(children) {
     if (typeof children === "object") {
       if (Array.isArray(children)) {
@@ -218,6 +237,18 @@ export class Component {
       } else {
         for (const key in children) {
           this.appendChild(key, children[key]);
+        }
+      }
+    }
+  }
+
+  setDirectives(directive) {
+    if (typeof directive === "object") {
+      if (Array.isArray(directive)) {
+        directive.forEach(e => this.appendDirective(e.selector, e.directive));
+      } else {
+        for (const key in directive) {
+          this.appendDirective(key, directive[key]);
         }
       }
     }
@@ -329,6 +360,13 @@ export class Component {
           }
         });
         remove.forEach(i => instances.splice(i, 1));
+      });
+      this.#directiveChildren.forEach(({ directive, selector }) => {
+        this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
+          if (directive instanceof Directive) {
+            directive.init(element, selector);
+          }
+        });
       });
       this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
       this.#components$.next(Array.from(children));

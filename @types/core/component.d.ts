@@ -1,12 +1,16 @@
 import { Observable } from "../../rx";
+import { Directive } from "../../src/core/directive";
 import { Service } from "./service";
+import { Constructable } from "../utils/constructable";
 
-export type ChildDefinitionObject = { selector: string, component: Component };
+export type ChildDefinitionObject<T> = { selector: string, component: T };
+export type RecordOrArray<T> = Record<string, T> | ChildDefinitionObject<T>[]
 
 export type ComponentOptions = {
-  children?:  Record<string, Component> | ChildDefinitionObject[]
-  style?:     string | string[]
-  deepStyle?: string | string[]
+  children?:    RecordOrArray<Component>
+  directives?:  RecordOrArray<Directive>
+  style?:       string | string[]
+  deepStyle?:   string | string[]
 };
 
 export class Component {
@@ -25,7 +29,12 @@ export class Component {
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
   appendChild(selector: string, component: Component): void;
-  setChildren(children: Record<string, Component> | ChildDefinitionObject[]): void;
+  appendDirective(
+    selector: string,
+    directive: Directive | Constructable<Directive> | (() => Directive)
+  ): void;
+  setChildren(children: RecordOrArray<Component>): void;
+  setDirectives(directives: RecordOrArray<Directive>): void;
   observeChildren(ref: string): Observable<HTMLElement[]>;
   observeChildrenSelector(selector: string): Observable<HTMLElement[]>;
   observeChildrenComponents(ref: string): Observable<{
