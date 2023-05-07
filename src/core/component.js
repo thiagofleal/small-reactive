@@ -10,7 +10,7 @@ export class Component {
   #properties = {};
   #element = [];
   #componentChildren = [];
-  #directiveChildren = [];
+  #directives = [];
   #onShowCallbacks = [];
   #onReloadCallbacks = [];
   #inUse = false;
@@ -226,7 +226,7 @@ export class Component {
     }
     if (directive instanceof Directive) {
       directive.setComponent(this);
-      this.#directiveChildren.push({ selector, directive });
+      this.#directives.push({ selector, directive });
     }
   }
 
@@ -361,8 +361,8 @@ export class Component {
         });
         remove.forEach(i => instances.splice(i, 1));
       });
-      this.#directiveChildren.forEach(({ directive, selector }) => {
-        this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
+      this.#directives.forEach(({ directive, selector }) => {
+        this.element.querySelectorAll(`[component=${this.#id}][${ selector }]`).forEach(element => {
           if (directive instanceof Directive) {
             directive.init(element, selector);
           }
