@@ -13,3 +13,6 @@ export function interval(interv: number): Observable<number>;
 export function fromEvents<T = any>(emitter: EventTarget, events: string[]): Observable<T>;
 export function fromEvent<T = any>(emitter: EventTarget, eventName: string): Observable<T>;
 export function fromEventSource<T = any>(url: string, events: string[]): Observable<T>;
+export function timeout<T>(time: number): Observable<T>;
+export function keepAlive<T>(time: number): Observable<T>;
+export function retry<T>(time: number): Observable<T>;

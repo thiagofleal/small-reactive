@@ -126,3 +126,57 @@ export function fromEventSource(url, events) {
     return () => source.close();
   });
 }
+
+export function timeout(time) {
+  return subscriber => {
+    return new Observable(observer => {
+      const _timeout = setTimeout(() => observer.error(new Error("Timeout error")), time);
+      const subscription = subscriber.subscribe({
+        next: value => observer.next(value),
+        error: err => observer.error(err),
+        complete: () => observer.complete()
+      });
+      return () => {
+        clearTimeout(_timeout);
+        subscription.unsubscribe();
+      };
+    });
+  };
+}
+
+export function keepAlive(time) {
+  return subscriber => {
+    return new Observable(observer => {
+      const timeout = setTimeout(() => observer.complete(), time);
+      const subscription = subscriber.subscribe({
+        next: value => observer.next(value),
+        error: err => observer.error(err),
+        complete: () => observer.complete()
+      });
+      return () => {
+        clearTimeout(timeout);
+        subscription.unsubscribe();
+      };
+    });
+  };
+}
+
+export function retry(time) {
+  return subscriber => {
+    return new Observable(observer => {
+      let timeout = void 0;
+      const observe = {
+        next: value => observer.next(value),
+        error: () => {
+          timeout = setTimeout(() => subscriber.subscribe(observe), time);
+        },
+        complete: () => observer.complete()
+      };
+      const subscription = subscriber.subscribe(observe);
+      return () => {
+        subscription.unsubscribe();
+        clearTimeout(timeout);
+      };
+    });
+  };
+}
