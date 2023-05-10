@@ -17,6 +17,27 @@ export class Observable<T> {
 
   pipe(): Observable<T>;
   pipe<R>(transform: UnaryFunction<T, R>): R;
-  pipe<R, S>(transform0: UnaryFunction<T, R>, transform1: UnaryFunction<R, S>): S;
+  pipe<R, S>(
+    transform0: UnaryFunction<T, R>,
+    transform1: UnaryFunction<R, S>
+  ): S;
+  pipe<R, S, T>(
+    transform0: UnaryFunction<T, R>,
+    transform1: UnaryFunction<R, S>,
+    transform2: UnaryFunction<S, T>
+  ): T;
+  pipe<R, S, T, U>(
+    transform0: UnaryFunction<T, R>,
+    transform1: UnaryFunction<R, S>,
+    transform2: UnaryFunction<S, T>,
+    transform3: UnaryFunction<T, U>
+  ): U;
+  pipe<R, S, T, U, V>(
+    transform0: UnaryFunction<T, R>,
+    transform1: UnaryFunction<R, S>,
+    transform2: UnaryFunction<S, T>,
+    transform3: UnaryFunction<T, U>,
+    transform4: UnaryFunction<U, V>
+  ): V;
   pipe(...pipeline: UnaryFunction<any, any>[]): any;
 }
