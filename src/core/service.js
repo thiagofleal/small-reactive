@@ -1,4 +1,4 @@
-import { Subject } from "../rx/subject.js";
+import { Subject } from "../../rx.js";
 
 export class Service {
   constructor() {
