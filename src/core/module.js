@@ -4,6 +4,7 @@ export class Module {
   static #modules = {};
   static #mapComponents = {};
   static #mapDirectives = {};
+  static #mapInjectables = {};
 
   injectables = [];
   components = [];
@@ -50,6 +51,7 @@ export class Module {
       this.#mapDirectives[directivet] = instance;
     });
     instance.injectables.forEach(injectable => {
+      this.#mapInjectables[injectable] = instance;
       Injectable.registerIn(injectable, instance);
     });
   }
@@ -60,6 +62,10 @@ export class Module {
 
   static getFromDirective(directive) {
     return this.#mapDirectives[directive];
+  }
+
+  static getFromInjectable(inject) {
+    return this.#mapInjectables[inject];
   }
 
   getFromImports(service) {
