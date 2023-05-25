@@ -1,4 +1,5 @@
 import { Observable } from "../rx/observable";
+import { Constructable } from "../utils/constructable";
 
 export class Service<T = any> {
   constructor();
@@ -8,4 +9,5 @@ export class Service<T = any> {
 
   notify(event: T): void;
   events(): Observable<T>;
+  inject<U extends Service>(classRef: Constructable<U>): U | undefined;
 }
