@@ -368,7 +368,7 @@ export class Component {
           }
         });
       });
-      this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
+      this.#children$.next(Array.from(this.#element.querySelectorAll(`[component="${this.#id}"]`)));
       this.#components$.next(Array.from(children));
       this.element.childNodes.forEach(e => this.#bindEvents(e));
     }
