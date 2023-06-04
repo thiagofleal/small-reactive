@@ -5,5 +5,5 @@ git clone https://github.com/thiagofleal/small-rxjs small-rxjs
 cd small-rxjs
 git fetch https://github.com/thiagofleal/small-rxjs && git checkout master
 git pull https://github.com/thiagofleal/small-rxjs master
-git checkout e833e111c2fb2acd734dddb818710a9f28eee2e0
+git checkout 2d3e038eaf79cd3316fc0dc44bb27c80f11d6e05
 cd ..
