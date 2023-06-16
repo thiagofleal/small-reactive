@@ -23,7 +23,10 @@ export class Component {
   #subscription = new Subscription();
 
   constructor(options) {
-    this.#id = randomString(15);
+    this.#id = [
+      randomString(3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+      randomString(12)
+    ].join("");
 
     if (options) {
       if (options.children) {
