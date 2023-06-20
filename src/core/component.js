@@ -173,7 +173,7 @@ export class Component {
     }
   }
 
-  show(element) {
+  showComponentInElement(element) {
     this.#initProperties({});
     this.#element = element;
     this.reload();
@@ -347,7 +347,7 @@ export class Component {
             }
             instance.#setChildren(elements[index]);
             instance.#markAsInUse();
-            instance.show(element);
+            instance.showComponentInElement(element);
             element.componentInstance = instance;
             children.push({
               element, component: instance

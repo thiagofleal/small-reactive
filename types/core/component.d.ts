@@ -25,7 +25,7 @@ export class Component {
   onConnect(): void;
   onDisconnect(): void;
 
-  show(element: HTMLElement): void;
+  showComponentInElement(element: HTMLElement): void;
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
   appendChild(selector: string, component: Component): void;

@@ -48,7 +48,7 @@ export class SmallReactive {
         target = document.querySelector(target);
       }
       if (target instanceof HTMLElement) {
-        component.show(target);
+        component.showComponentInElement(target);
       }
     }
   }
