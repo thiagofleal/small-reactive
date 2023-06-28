@@ -1,5 +1,6 @@
 export { SmallReactive } from "./types/core/small-reactive";
 export { Component } from "./types/core/component";
+export { Switch } from "./types/core/switch";
 export { Directive } from "./types/core/directive";
 export { Module } from "./types/core/module";
 export { Injectable } from "./types/core/injectable";
