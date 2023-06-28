@@ -16,8 +16,9 @@ export type ComponentOptions = {
 export class Component {
   constructor(opts?: ComponentOptions);
 
-  get element(): HTMLElement;
+  get element(): HTMLElement | undefined;
   get children(): HTMLElement;
+  get parent(): Component | undefined;
 
   render(): string;
   onShow(): void;
