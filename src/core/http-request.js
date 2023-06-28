@@ -33,8 +33,12 @@ export class HttpRequest extends Service {
       if (callbackReturn) {
         if (callbackReturn.url) url = callbackReturn.url;
         if (callbackReturn.method) method = callbackReturn.method;
-        if (callbackReturn.body) body = callbackReturn.body;
-        if (callbackReturn.opts) opts = callbackReturn.opts;
+        if (callbackReturn.body !== void 0) {
+          body = callbackReturn.body ? callbackReturn.body : void 0;
+        }
+        if (callbackReturn.opts !== void 0) {
+          opts = callbackReturn.opts ? callbackReturn.opts : void 0;
+        }
       }
     }
 		if (opts === null || opts === undefined || typeof opts !== "object") {
@@ -42,9 +46,14 @@ export class HttpRequest extends Service {
 		}
 		opts.method = method;
 
-		if (body) {
-			opts.body = JSON.stringify(body);
-		}
+    if (!opts.headers) {
+      opts.headers = {};
+    }
+    if (opts.headers["content-type"] === "application/json") {
+      opts.body = JSON.stringify(body || {});
+    } else {
+      opts.body = body;
+    }
 		let ret = await this.#send(url, opts);
 
     for (let i = 0; i < after.length; i++) {

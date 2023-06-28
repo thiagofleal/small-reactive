@@ -16,8 +16,9 @@ export type ComponentOptions = {
 export class Component {
   constructor(opts?: ComponentOptions);
 
-  get element(): HTMLElement;
+  get element(): HTMLElement | undefined;
   get children(): HTMLElement;
+  get parent(): Component | undefined;
 
   render(): string;
   onShow(): void;
@@ -25,7 +26,7 @@ export class Component {
   onConnect(): void;
   onDisconnect(): void;
 
-  show(element: HTMLElement): void;
+  showComponentInElement(element: HTMLElement): void;
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
   appendChild(selector: string, component: Component): void;

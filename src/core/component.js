@@ -8,7 +8,7 @@ import { Directive } from "./directive.js";
 
 export class Component {
   #properties = {};
-  #element = [];
+  #element = void 0;
   #componentChildren = [];
   #directives = [];
   #onShowCallbacks = [];
@@ -21,6 +21,8 @@ export class Component {
   #styles = [];
   #deepStyles = [];
   #subscription = new Subscription();
+  #parent = undefined;
+  #context = this;
 
   constructor(options) {
     this.#id = [
@@ -58,19 +60,23 @@ export class Component {
     return this.#children;
   }
 
+  get parent() {
+    return this.#parent;
+  }
+
   render() { return ""; }
   onShow() {}
   onReload() {}
   onConnect() {}
   onDisconnect() {}
 
-  #markAsInUse() {
+  markAsInUse() {
     this.#inUse = true;
   }
-  #resetInUse() {
+  resetInUse() {
     this.#inUse = false;
   }
-  #checkInUse() {
+  checkInUse() {
     if (!this.#inUse) {
       document.head.querySelectorAll(`style[component="${this.#id}"]`).forEach(e => e.remove());
       this.onDisconnect();
@@ -79,8 +85,13 @@ export class Component {
     }
     return true;
   }
-  #setChildren(children) {
+  setChildrenElements(children) {
     this.#children = children;
+  }
+  setContext(context) {
+    if (context instanceof Component) {
+      this.#context = context;
+    }
   }
 
   #instanceComponent(element, seed, ...args) {
@@ -99,6 +110,7 @@ export class Component {
       }
     }
     if (instance instanceof Component) {
+      instance.#parent = this;
       return instance;
     }
     return null;
@@ -127,7 +139,8 @@ export class Component {
           if (key.startsWith(prefix)) {
             const event = key.substring(prefix.length);
             element.addEventListener(event, event => {
-              new Function("event", "element", attributes[key]).call(this, event, element);
+              new Function("event", "element", attributes[key])
+                .call(this.#context, event, element);
             });
           }
         }
@@ -139,7 +152,7 @@ export class Component {
               this.#onReloadCallbacks.push(() => {
                 const property = key.substring(prefix.length);
                 element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
-                  .call(this);
+                  .call(this.#context);
               });
             }
           }
@@ -173,7 +186,7 @@ export class Component {
     }
   }
 
-  show(element) {
+  showComponentInElement(element) {
     this.#initProperties({});
     this.#element = element;
     this.reload();
@@ -308,7 +321,7 @@ export class Component {
     if (!data.detail) {
       data = { detail: data };
     }
-    this.#element.dispatchEvent(new CustomEvent(event, data))
+    this.element.dispatchEvent(new CustomEvent(event, data))
   }
 
   inject(service) {
@@ -321,61 +334,63 @@ export class Component {
   }
 
   reload() {
-    const template = this.render(this.#element);
-    const vDom = new VirtualDom();
-    vDom.load(template);
-    vDom.ignore = this.#componentChildren.map(e => e.selector);
-    const changes = vDom.apply(this.#element, {
-      component: this.#id
-    });
-
-    if (changes) {
-      const children = [];
-      this.#componentChildren.forEach(child => {
-        const { selector, component, instances } = child;
-        instances.forEach(e => {
-          if (e instanceof Component) {
-            e.#resetInUse();
-          }
-        });
-        const elements = vDom.template.querySelectorAll(selector);
-        this.#element.querySelectorAll(selector).forEach((element, index) => {
-          const instance = this.#instanceComponent(element, component);
-          if (instance) {
-            if (!instances.includes(instance)) {
-              instances.push(instance);
-            }
-            instance.#setChildren(elements[index]);
-            instance.#markAsInUse();
-            instance.show(element);
-            element.componentInstance = instance;
-            children.push({
-              element, component: instance
-            });
-          }
-        });
-        const remove = [];
-        instances.forEach((e, i) => {
-          if (e instanceof Component) {
-            if (!e.#checkInUse()) {
-              remove.push(i);
-            }
-          }
-        });
-        remove.forEach(i => instances.splice(i, 1));
+    if (this.element) {
+      const template = this.render(this.element);
+      const vDom = new VirtualDom();
+      vDom.load(template);
+      vDom.ignore = this.#componentChildren.map(e => e.selector);
+      const changes = vDom.apply(this.element, {
+        component: this.#id
       });
-      this.#directives.forEach(({ directive, selector }) => {
-        this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
-          if (directive instanceof Directive) {
-            directive.init(element, selector);
-          }
+  
+      if (changes) {
+        const children = [];
+        this.#componentChildren.forEach(child => {
+          const { selector, component, instances } = child;
+          instances.forEach(e => {
+            if (e instanceof Component) {
+              e.resetInUse();
+            }
+          });
+          const elements = vDom.template.querySelectorAll(selector);
+          this.element.querySelectorAll(selector).forEach((element, index) => {
+            const instance = this.#instanceComponent(element, component);
+            if (instance) {
+              if (!instances.includes(instance)) {
+                instances.push(instance);
+              }
+              instance.setChildrenElements(elements[index]);
+              instance.markAsInUse();
+              instance.showComponentInElement(element);
+              element.componentInstance = instance;
+              children.push({
+                element, component: instance
+              });
+            }
+          });
+          const remove = [];
+          instances.forEach((e, i) => {
+            if (e instanceof Component) {
+              if (!e.checkInUse()) {
+                remove.push(i);
+              }
+            }
+          });
+          remove.forEach(i => instances.splice(i, 1));
         });
-      });
-      this.#children$.next(Array.from(this.#element.querySelectorAll(`[component="${this.#id}"]`)));
-      this.#components$.next(Array.from(children));
-      this.element.childNodes.forEach(e => this.#bindEvents(e));
+        this.#directives.forEach(({ directive, selector }) => {
+          this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
+            if (directive instanceof Directive) {
+              directive.init(element, selector);
+            }
+          });
+        });
+        this.#children$.next(Array.from(this.element.querySelectorAll(`[component="${this.#id}"]`)));
+        this.#components$.next(Array.from(children));
+        this.element.childNodes.forEach(e => this.#bindEvents(e));
+      }
+      this.#onReloadCallbacks.forEach(e => e());
+      this.onReload();
     }
-    this.#onReloadCallbacks.forEach(e => e());
-    this.onReload();
   }
 }
