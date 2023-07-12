@@ -15,7 +15,7 @@ export class Component {
   #onReloadCallbacks = [];
   #inUse = false;
   #id = null;
-  #children = null;
+  #content = void 0;
   #children$ = new BehaviorSubject([]);
   #components$ = new BehaviorSubject([]);
   #styles = [];
@@ -56,8 +56,8 @@ export class Component {
     return this.#element;
   }
 
-  get children() {
-    return this.#children;
+  get content() {
+    return this.#content;
   }
 
   get parent() {
@@ -85,13 +85,21 @@ export class Component {
     }
     return true;
   }
-  setChildrenElements(children) {
-    this.#children = children;
+  setContent(content) {
+    this.#content = content;
   }
   setContext(context) {
     if (context instanceof Component) {
       this.#context = context;
     }
+  }
+
+  getElementByRef(ref) {
+    return this.element.querySelector(`[ref="${ ref }"]`);
+  }
+
+  getElementsByRef(ref) {
+    return this.element.querySelectorAll(`[ref="${ ref }"]`);
   }
 
   #instanceComponent(element, seed, ...args) {
@@ -359,7 +367,7 @@ export class Component {
               if (!instances.includes(instance)) {
                 instances.push(instance);
               }
-              instance.setChildrenElements(elements[index]);
+              instance.setContent(elements[index]);
               instance.markAsInUse();
               instance.showComponentInElement(element);
               element.componentInstance = instance;

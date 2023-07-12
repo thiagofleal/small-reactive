@@ -17,8 +17,11 @@ export class Component {
   constructor(opts?: ComponentOptions);
 
   get element(): HTMLElement | undefined;
-  get children(): HTMLElement;
+  get content(): HTMLElement | undefined;
   get parent(): Component | undefined;
+
+  getElementByRef<T = HTMLElement>(ref: string): T | undefined;
+  getElementsByRef<T = HTMLElement>(ref: string): T[];
 
   render(): string;
   onShow(): void;
