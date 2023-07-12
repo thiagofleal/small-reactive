@@ -341,6 +341,12 @@ export class Component {
     return Injectable.get(service);
   }
 
+  emitContentValues() {
+    if (this.element) {
+      this.#children$.next(Array.from(this.element.querySelectorAll(`[component="${this.#id}"]`)));
+    }
+  }
+
   reload() {
     if (this.element) {
       const template = this.render(this.element);
@@ -350,7 +356,7 @@ export class Component {
       const changes = vDom.apply(this.element, {
         component: this.#id
       });
-  
+
       if (changes) {
         const children = [];
         this.#componentChildren.forEach(child => {
@@ -358,6 +364,7 @@ export class Component {
           instances.forEach(e => {
             if (e instanceof Component) {
               e.resetInUse();
+              e.emitContentValues();
             }
           });
           const elements = vDom.template.querySelectorAll(selector);
@@ -370,6 +377,7 @@ export class Component {
               instance.setContent(elements[index]);
               instance.markAsInUse();
               instance.showComponentInElement(element);
+              instance.emitContentValues();
               element.componentInstance = instance;
               children.push({
                 element, component: instance
@@ -385,6 +393,10 @@ export class Component {
             }
           });
           remove.forEach(i => instances.splice(i, 1));
+
+          if (component instanceof Component) {
+            component.emitContentValues();
+          }
         });
         this.#directives.forEach(({ directive, selector }) => {
           this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
@@ -393,10 +405,10 @@ export class Component {
             }
           });
         });
-        this.#children$.next(Array.from(this.element.querySelectorAll(`[component="${this.#id}"]`)));
         this.#components$.next(Array.from(children));
         this.element.childNodes.forEach(e => this.#bindEvents(e));
       }
+      this.emitContentValues();
       this.#onReloadCallbacks.forEach(e => e());
       this.onReload();
     }
