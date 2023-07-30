@@ -49,10 +49,12 @@ export class HttpRequest extends Service {
     if (!opts.headers) {
       opts.headers = {};
     }
-    if (opts.headers["content-type"] === "application/json") {
-      opts.body = JSON.stringify(body || {});
-    } else {
-      opts.body = body;
+    if (body) {
+      if (opts.headers["content-type"] === "application/json") {
+        opts.body = JSON.stringify(body);
+      } else {
+        opts.body = body;
+      }
     }
 		let ret = await this.#send(url, opts);
 
