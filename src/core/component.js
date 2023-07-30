@@ -23,6 +23,7 @@ export class Component {
   #subscription = new Subscription();
   #parent = undefined;
   #context = this;
+  #listenersMap = new Map();
 
   constructor(options) {
     this.#id = [
@@ -140,32 +141,44 @@ export class Component {
   #bindEvents(element) {
     if (element instanceof HTMLElement) {
       const attributes = getAllAttributesFrom(element);
-      if (!element.initiated) {
-        const prefix = "event:";
+      const prefix = "event:";
+      let elementListeners = this.#listenersMap.get(element);
+
+      if (!elementListeners) {
+        elementListeners = {};
+        this.#listenersMap.set(element, elementListeners);
+      }
+      for (const key in attributes) {
+        if (key.startsWith(prefix)) {
+          const event = key.substring(prefix.length);
+          const elementListenersForEvent = elementListeners[event] || [];
+
+          elementListenersForEvent.forEach(listener => {
+            element.removeEventListener(event, listener);
+          });
+          elementListenersForEvent.splice(0);
+          elementListeners[event] = elementListenersForEvent;
+
+          const listener = event => {
+            new Function("event", "element", attributes[key])
+              .call(this.#context, event, element);
+          };
+          elementListenersForEvent.push(listener);
+          element.addEventListener(event, listener);
+        }
+      }
+      if (element.component) {
+        const prefix = "bind:";
 
         for (const key in attributes) {
           if (key.startsWith(prefix)) {
-            const event = key.substring(prefix.length);
-            element.addEventListener(event, event => {
-              new Function("event", "element", attributes[key])
-                .call(this.#context, event, element);
+            this.#onReloadCallbacks.push(() => {
+              const property = key.substring(prefix.length);
+              element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
+                .call(this.#context);
             });
           }
         }
-        if (element.component) {
-          const prefix = "bind:";
-
-          for (const key in attributes) {
-            if (key.startsWith(prefix)) {
-              this.#onReloadCallbacks.push(() => {
-                const property = key.substring(prefix.length);
-                element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
-                  .call(this.#context);
-              });
-            }
-          }
-        }
-        element.initiated = true;
       }
       if (!this.#isToIgnore(element)) {
         element.childNodes.forEach(e => this.#bindEvents(e));
