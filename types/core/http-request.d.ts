@@ -1,4 +1,5 @@
 import { RegistryManagerReturn } from "../utils/registry-manager"
+import { Service } from "./service"
 
 export declare class HttpRequest extends Service {
   constructor();
