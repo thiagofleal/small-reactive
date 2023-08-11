@@ -1,10 +1,10 @@
 import { Injectable } from "./injectable.js";
 
 export class Module {
-  static #modules = {};
-  static #mapComponents = {};
-  static #mapDirectives = {};
-  static #mapInjectables = {};
+  static #modules = new Map();
+  static #mapComponents = new Map();
+  static #mapDirectives = new Map();
+  static #mapInjectables = new Map();
 
   injectables = [];
   components = [];
@@ -35,37 +35,47 @@ export class Module {
       if (!Array.isArray(options.imports)) {
         options.imports = [ options.imports ];
       }
-      this.modules = options.imports.map(e => Module.#modules[e]);
+      this.modules = options.imports.map(e => Module.#modules.get(e));
     }
   }
 
   static register(module, ...args) {
-    const instance = new module(...args);
+    let instance;
 
-    this.#modules[module] = instance;
+    if (module instanceof Module) {
+      instance = module;
+    }
+    if (typeof module === "function") {
+      try {
+        instance = new module(...args);
+      } catch (e) {
+        instance = module(...args);
+      }
+    }
+    this.#modules.set(module.constructor, instance);
 
     instance.components.forEach(component => {
-      this.#mapComponents[component] = instance;
+      this.#mapComponents.set(component, instance);
     });
     instance.directives.forEach(directivet => {
-      this.#mapDirectives[directivet] = instance;
+      this.#mapDirectives.set(directivet, instance);
     });
     instance.injectables.forEach(injectable => {
-      this.#mapInjectables[injectable] = instance;
+      this.#mapInjectables.set(injectable, instance);
       Injectable.registerIn(injectable, instance);
     });
   }
 
   static getFromComponent(component) {
-    return this.#mapComponents[component];
+    return this.#mapComponents.get(component);
   }
 
   static getFromDirective(directive) {
-    return this.#mapDirectives[directive];
+    return this.#mapDirectives.get(directive);
   }
 
   static getFromInjectable(inject) {
-    return this.#mapInjectables[inject];
+    return this.#mapInjectables.get(inject);
   }
 
   getFromImports(service) {
