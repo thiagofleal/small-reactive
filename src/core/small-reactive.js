@@ -1,3 +1,4 @@
+import { Service } from "../../core.js";
 import { Component } from "./component.js";
 import { Injectable } from "./injectable.js";
 import { Module } from "./module.js";
@@ -13,10 +14,9 @@ export class SmallReactive {
 				}
         return module;
       }));
-      allModules.forEach(module => {
-        if (typeof module === "function") {
-          Module.register(module);
-        }
+      allModules.forEach(item => {
+        const { module, args } = (item instanceof Module) ? { module: item } : item
+        Module.register(module, args);
       });
 		}
 		if (Array.isArray(inject)) {
@@ -26,8 +26,9 @@ export class SmallReactive {
 				}
         return service;
       }));
-      services.forEach(service => {
-        Injectable.register(service);
+      services.forEach(item => {
+        const { service, args } = (item instanceof Service) ? { service: item } : item
+        Injectable.register(service, args);
       });
 		}
     if (component instanceof Promise) {

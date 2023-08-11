@@ -8,7 +8,10 @@ type ConstructableOrPromise<T> = Constructable<T> | Promise<Constructable<T>>;
 type StartOptions = {
   target:     HTMLElement | string,
   component:  Constructable<Component> | Component | ((...args?: any[]) => Component),
-  modules?:   ConstructableOrPromise<Module>[],
+  modules?:   (ConstructableOrPromise<Module> | {
+    module:   ConstructableOrPromise<Module>
+    args?:    any
+  })[],
   inject?:    (ConstructableOrPromise<Service> | {
     service:  ConstructableOrPromise<Service>
     args?:    any
