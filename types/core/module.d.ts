@@ -13,7 +13,7 @@ export class Module {
       args?:      any
     })[]
   })
-  static register(module: Module | Constructable<Module> | ((...args: any[]) => Module)): void
+  static register(module: Constructable<Module> | { module: Constructable<Module>, args: any }): void
   static getFromComponent(component: Component): Module | undefined
   static getFromDirective(directive: Directive): Module | undefined
   inject<T extends Service>(service: Constructable<T>): T | undefined

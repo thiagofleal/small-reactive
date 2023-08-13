@@ -39,18 +39,19 @@ export class Module {
     }
   }
 
-  static register(module, ...args) {
+  static register(module, args) {
     let instance;
 
     if (module instanceof Module) {
       instance = module;
-    }
-    if (typeof module === "function") {
+    } else if (typeof module === "function") {
       try {
-        instance = new module(...args);
+        instance = new module(args);
       } catch (e) {
-        instance = module(...args);
+        instance = module(args);
       }
+    } else if (typeof module === "object") {
+      return this.register(module.module, module.args);
     }
     this.#modules.set(module.constructor, instance);
 
