@@ -29,15 +29,15 @@ export declare class HttpRequest extends Service {
     opts?: RequestInit
   ): Promise<T>;
 
-  getResponse<T = any>(url: string, args?: RequestInit): Promise<Response<T>>;
+  getResponse(url: string, args?: RequestInit): Promise<Response>;
 	get<T = any>(url: string, args?: RequestInit): Promise<T>;
 
-	postResponse<T = any>(url: string, body: any, args?: RequestInit): Promise<Response<T>>;
+	postResponse(url: string, body: any, args?: RequestInit): Promise<Response>;
 	post<T = any>(url: string, body: any, args?: RequestInit): Promise<T>;
 
-	putResponse<T = any>(url: string, body: any, args?: RequestInit): Promise<Response<T>>;
+	putResponse(url: string, body: any, args?: RequestInit): Promise<Response>;
   put<T = any>(url: string, body: any, args?: RequestInit): Promise<T>;
 
-	deleteResponse<T = any>(url: string, args?: RequestInit): Promise<Response<T>>;
+	deleteResponse(url: string, args?: RequestInit): Promise<Response>;
 	delete<T = any>(url: string, args?: RequestInit): Promise<T>;
 }

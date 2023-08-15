@@ -1,4 +1,4 @@
-import { Observable } from "../rx/observable";
+import { Observable } from "../../rx";
 import { Constructable } from "../utils/constructable";
 
 export class Service<T = any> {
