@@ -6,4 +6,5 @@ export class Switch extends Component {
 
   setComponent(key: string, component: Component): void;
   select(key: string): void;
+  render(): string;
 }

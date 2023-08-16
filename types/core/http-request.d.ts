@@ -1,7 +1,7 @@
 import { RegistryManagerReturn } from "../utils/registry-manager"
 import { Service } from "./service"
 
-export declare class HttpRequest extends Service {
+export declare class HttpRequest<T = any> extends Service<T> {
   constructor();
 
   registerBeforeSendCallback(

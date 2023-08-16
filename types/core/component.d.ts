@@ -7,13 +7,26 @@ export type ChildDefinitionObject<T> = { selector: string, component: T };
 export type RecordOrArray<T> = Record<string, T> | ChildDefinitionObject<T>[]
 
 export type ComponentOptions = {
-  children?:    RecordOrArray<Component>
-  directives?:  RecordOrArray<Directive>
+  children?:    RecordOrArray<Component | Constructable<Component> | (() => Component)>
+  directives?:  RecordOrArray<Directive | Constructable<Directive> | (() => Directive)>
   style?:       string | string[]
   deepStyle?:   string | string[]
 };
 
-export class Component {
+export interface OnShow {
+  onShow(): void;
+}
+export interface OnReload {
+  onReload(): void;
+}
+export interface OnConnect {
+  onConnect(): void;
+}
+export interface OnDisconnect {
+  onDisconnect(): void;
+}
+
+export abstract class Component {
   constructor(opts?: ComponentOptions);
 
   get element(): HTMLElement | undefined;
@@ -23,11 +36,7 @@ export class Component {
   getElementByRef<T = HTMLElement>(ref: string): T | undefined;
   getElementsByRef<T = HTMLElement>(ref: string): T[];
 
-  render(): string;
-  onShow(): void;
-  onReload(): void;
-  onConnect(): void;
-  onDisconnect(): void;
+  abstract render(): string;
 
   showComponentInElement(element: HTMLElement): void;
 	useStyle(style: string): void;
