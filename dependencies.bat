@@ -6,5 +6,5 @@ CD small-rxjs
 CALL git fetch https://github.com/thiagofleal/small-rxjs
 CALL git checkout master
 CALL git pull https://github.com/thiagofleal/small-rxjs master
-CALL git checkout fa307589262ae93d81ffd2301285f957520b3274
+CALL git checkout de6d4bf66aa231768cd6a026dff79ccc841eaa6d
 CD ..
