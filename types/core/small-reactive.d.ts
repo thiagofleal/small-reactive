@@ -1,21 +1,15 @@
 import { Constructable } from "../utils/constructable";
 import { Component } from "./component"
-import { Service } from "./service";
-import { Module } from "./module";
+import { ModuleInitialize } from "./module";
+import { InjectableInitialize } from "./injectable";
 
 type ConstructableOrPromise<T> = Constructable<T> | Promise<Constructable<T>>;
 
 type StartOptions = {
   target:     HTMLElement | string,
   component:  Constructable<Component> | Component | ((...args: any[]) => Component),
-  modules?:   (ConstructableOrPromise<Module> | {
-    module:   ConstructableOrPromise<Module>
-    args?:    any
-  })[],
-  inject?:    (ConstructableOrPromise<Service> | {
-    service:  ConstructableOrPromise<Service>
-    args?:    any
-  })[]
+  modules?:   ModuleInitialize[],
+  inject?:    InjectableInitialize[]
 };
 
 export class SmallReactive {
