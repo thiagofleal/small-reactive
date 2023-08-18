@@ -34,31 +34,26 @@ export declare class HttpRequest<T = any> extends Service<T> {
 
   getResponse(url: string, args?: RequestInit): Promise<Response>;
 
-  get(url: string): Promise<Response>;
-	get(url: string, args: RequestInit): Promise<Response>;
+	get(url: string, args?: RequestInit): Promise<Response>;
 	get<T>(url: string, args: RequestInit, cb: ResponseCallback<T>): Promise<T>;
 
 	postResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
 
-  post(url: string, body: any): Promise<Response>;
-  post(url: string, body: any, args: CustomRequestInit): Promise<Response>;
+  post(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
 	post<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
 
 	putResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
 
-  put(url: string, body: any): Promise<Response>;
-  put(url: string, body: any, args: CustomRequestInit): Promise<Response>;
+  put(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
   put<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
 
 	patchResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
 
-  patch(url: string, body: any): Promise<Response>;
-  patch(url: string, body: any, args: CustomRequestInit): Promise<Response>;
+  patch(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
   patch<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
 
 	deleteResponse(url: string, args?: CustomRequestInit): Promise<Response>;
 
-  delete(url: string): Promise<Response>;
-  delete(url: string, args: RequestInit): Promise<Response>;
+  delete(url: string, args?: RequestInit): Promise<Response>;
 	delete<T>(url: string, args: RequestInit, cb: ResponseCallback<T>): Promise<T>;
 }
