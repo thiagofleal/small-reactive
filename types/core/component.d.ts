@@ -43,19 +43,26 @@ export abstract class Component {
   showComponentInElement(element: HTMLElement): void;
 	useStyle(style: string): void;
 	useDeepStyle(style: string): void;
-  appendChild(selector: string, component: Component): void;
+  appendChild(
+    selector: string,
+    component: Component | Constructable<Component> | (() => Component)
+  ): void;
   appendDirective(
     selector: string,
     directive: Directive | Constructable<Directive> | (() => Directive)
   ): void;
-  setChildren(children: ChildrenRecordOrArray<Component>): void;
-  setDirectives(directives: ChildrenRecordOrArray<Directive>): void;
+  setChildren(
+    children: ChildrenRecordOrArray<Component | Constructable<Component> | (() => Component)>
+  ): void;
+  setDirectives(
+    directives: DirectivesRecordOrArray<Directive | Constructable<Directive> | (() => Directive)>
+  ): void;
   observeChildren(ref: string): Observable<HTMLElement[]>;
   observeChildrenSelector(selector: string): Observable<HTMLElement[]>;
   observeChildrenComponents(ref: string): Observable<{
     element: HTMLElement,
     component: Component
-  }>;
+  }[]>;
   childrenReference(refs: Record<string, string>): void;
   childReference(refs: Record<string, string>): void;
   eventEmitter<T = any>(event: string): {
