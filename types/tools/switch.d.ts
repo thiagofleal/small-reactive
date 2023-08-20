@@ -1,4 +1,4 @@
-import { Component } from "./component";
+import { Component } from "../../core";
 
 export class Switch extends Component {
   get selected(): Component;

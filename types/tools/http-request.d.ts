@@ -1,5 +1,5 @@
 import { RegistryManagerReturn } from "../utils/registry-manager"
-import { Service } from "./service"
+import { Service } from "../../core"
 
 type ResponseCallback<T> = (response: Response) => T | Promise<T>;
 type CustomRequestInit = RequestInit & { json?: boolean };
