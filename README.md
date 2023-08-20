@@ -54,7 +54,8 @@ To start an Small Reactive application, is necessary an **HTML** file, a **main 
 #### Example:
 
 Project structure:
-  |
+```
+  .
   ├─  index.html                # index file
   ├─  vendor/                   # project dependencies
   |   └─  small-reactive        # Small Reactive library
@@ -64,7 +65,7 @@ Project structure:
       └─  components/           # components folder
           ├─  app.component.js  # main component
           └─  ...
-
+```
 - index.html
 ```html
 <!doctype html>
