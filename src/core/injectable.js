@@ -1,4 +1,4 @@
-import { Module } from "./module";
+import { Module } from "./module.js";
 
 export class Injectable {
   static registerIn(classRef, from, args) {
