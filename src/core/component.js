@@ -2,46 +2,67 @@ import { getAllAttributesFrom, randomString } from "../utils/functions.js";
 import { VirtualDom } from "../utils/virtual-dom.js";
 import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
+import { Module } from "./module.js";
+import { Injectable } from "./injectable.js";
+import { Directive } from "./directive.js";
 
 export class Component {
   #properties = {};
-  #element = [];
-  #childs = [];
+  #element = void 0;
+  #componentChildren = [];
+  #directives = [];
   #onShowCallbacks = [];
   #onReloadCallbacks = [];
   #inUse = false;
   #id = null;
-  #children = null;
+  #content = void 0;
   #children$ = new BehaviorSubject([]);
   #components$ = new BehaviorSubject([]);
   #styles = [];
   #deepStyles = [];
   #subscription = new Subscription();
+  #parent = undefined;
+  #context = this;
+  #listenersMap = new Map();
 
-  constructor(props) {
-    if (props && typeof props === "object") {
-      for (const key in props) {
-        this.#properties[key] = props[key];
-        Object.defineProperty(this, key, {
-          get: () => this.#properties[key],
-          set: value => {
-            if (this.#properties[key] !== value) {
-              this.#properties[key] = value;
-              this.reload();
-            }
-          }
-        });
+  constructor(options) {
+    this.#id = [
+      randomString(3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+      randomString(12)
+    ].join("");
+
+    if (options) {
+      if (options.children) {
+        this.setChildren(options.children);
+      }
+      if (options.directives) {
+        this.setDirectives(options.directives);
+      }
+      if (options.style) {
+        if (!Array.isArray(options.style)) {
+          options.style = [ options.style ];
+        }
+        options.style.forEach(style => this.useStyle(style));
+      }
+      if (options.deepStyle) {
+        if (!Array.isArray(options.deepStyle)) {
+          options.deepStyle = [ options.deepStyle ];
+        }
+        options.deepStyle.forEach(deepStyle => this.useDeepStyle(deepStyle));
       }
     }
-    this.#id = randomString(15);
   }
 
   get element() {
     return this.#element;
   }
 
-  get children() {
-    return this.#children;
+  get content() {
+    return this.#content;
+  }
+
+  get parent() {
+    return this.#parent;
   }
 
   render() { return ""; }
@@ -50,13 +71,13 @@ export class Component {
   onConnect() {}
   onDisconnect() {}
 
-  #markAsInUse() {
+  markAsInUse() {
     this.#inUse = true;
   }
-  #resetInUse() {
+  resetInUse() {
     this.#inUse = false;
   }
-  #checkInUse() {
+  checkInUse() {
     if (!this.#inUse) {
       document.head.querySelectorAll(`style[component="${this.#id}"]`).forEach(e => e.remove());
       this.onDisconnect();
@@ -65,8 +86,21 @@ export class Component {
     }
     return true;
   }
-  #setChildren(children) {
-    this.#children = children;
+  setContent(content) {
+    this.#content = content;
+  }
+  setContext(context) {
+    if (context instanceof Component) {
+      this.#context = context;
+    }
+  }
+
+  getElementByRef(ref) {
+    return this.element.querySelector(`[ref="${ ref }"]`);
+  }
+
+  getElementsByRef(ref) {
+    return this.element.querySelectorAll(`[ref="${ ref }"]`);
   }
 
   #instanceComponent(element, seed, ...args) {
@@ -85,13 +119,14 @@ export class Component {
       }
     }
     if (instance instanceof Component) {
+      instance.#parent = this;
       return instance;
     }
     return null;
   }
 
   #isToIgnore(element) {
-    return this.#childs.map(e => e.selector).some(e => element.matches(e));
+    return this.#componentChildren.map(e => e.selector).some(e => element.matches(e));
   }
 
   #assignComponent(item) {
@@ -106,31 +141,44 @@ export class Component {
   #bindEvents(element) {
     if (element instanceof HTMLElement) {
       const attributes = getAllAttributesFrom(element);
-      if (!element.initiated) {
-        const prefix = "event:";
+      const prefix = "event:";
+      let elementListeners = this.#listenersMap.get(element);
+
+      if (!elementListeners) {
+        elementListeners = {};
+        this.#listenersMap.set(element, elementListeners);
+      }
+      for (const key in attributes) {
+        if (key.startsWith(prefix)) {
+          const event = key.substring(prefix.length);
+          const elementListenersForEvent = elementListeners[event] || [];
+
+          elementListenersForEvent.forEach(listener => {
+            element.removeEventListener(event, listener);
+          });
+          elementListenersForEvent.splice(0);
+          elementListeners[event] = elementListenersForEvent;
+
+          const listener = event => {
+            new Function("event", "element", attributes[key])
+              .call(this.#context, event, element);
+          };
+          elementListenersForEvent.push(listener);
+          element.addEventListener(event, listener);
+        }
+      }
+      if (element.component) {
+        const prefix = "bind:";
 
         for (const key in attributes) {
           if (key.startsWith(prefix)) {
-            const event = key.substring(prefix.length);
-            element.addEventListener(event, event => {
-              new Function("event", "element", attributes[key]).call(this, event, element);
+            this.#onReloadCallbacks.push(() => {
+              const property = key.substring(prefix.length);
+              element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
+                .call(this.#context);
             });
           }
         }
-        if (element.component) {
-          const prefix = "bind:";
-
-          for (const key in attributes) {
-            if (key.startsWith(prefix)) {
-              this.#onReloadCallbacks.push(() => {
-                const property = key.substring(prefix.length);
-                element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
-                  .call(this);
-              });
-            }
-          }
-        }
-        element.initiated = true;
       }
       if (!this.#isToIgnore(element)) {
         element.childNodes.forEach(e => this.#bindEvents(e));
@@ -138,7 +186,29 @@ export class Component {
     }
   }
 
-  show(element) {
+  #initProperties(props) {
+    Object.keys(this).forEach(key => {
+      props[key] = this[key];
+      delete this[key];
+    });
+    if (props && typeof props === "object") {
+      for (const key in props) {
+        this.#properties[key] = props[key];
+        Object.defineProperty(this, key, {
+          get: () => this.#properties[key],
+          set: value => {
+            if (this.#properties[key] !== value) {
+              this.#properties[key] = value;
+              this.reload();
+            }
+          }
+        });
+      }
+    }
+  }
+
+  showComponentInElement(element) {
+    this.#initProperties({});
     this.#element = element;
     this.reload();
     if (!element.component) {
@@ -180,16 +250,42 @@ export class Component {
 	}
 
   appendChild(selector, component) {
-    this.#childs.push({ selector, component, instances: [] });
+    this.#componentChildren.push({ selector, component, instances: [] });
   }
 
-  setChilds(childs) {
-    if (typeof childs === "object") {
-      if (Array.isArray(childs)) {
-        childs.forEach(e => this.appendChild(e.selector, e.component));
+  appendDirective(selector, directive) {
+    if (typeof directive === "function") {
+      try {
+        directive = new directive();
+      } catch(e) {
+        directive = directive();
+      }
+    }
+    if (directive instanceof Directive) {
+      directive.setComponent(this);
+      this.#directives.push({ selector, directive });
+    }
+  }
+
+  setChildren(children) {
+    if (typeof children === "object") {
+      if (Array.isArray(children)) {
+        children.forEach(e => this.appendChild(e.selector, e.component));
       } else {
-        for (const key in childs) {
-          this.appendChild(key, childs[key]);
+        for (const key in children) {
+          this.appendChild(key, children[key]);
+        }
+      }
+    }
+  }
+
+  setDirectives(directive) {
+    if (typeof directive === "object") {
+      if (Array.isArray(directive)) {
+        directive.forEach(e => this.appendDirective(e.selector, e.directive));
+      } else {
+        for (const key in directive) {
+          this.appendDirective(key, directive[key]);
         }
       }
     }
@@ -246,58 +342,88 @@ export class Component {
     if (!data.detail) {
       data = { detail: data };
     }
-    this.#element.dispatchEvent(new CustomEvent(event, data))
+    this.element.dispatchEvent(new CustomEvent(event, data))
+  }
+
+  inject(service) {
+    const module = Module.getFromComponent(this.constructor);
+
+    if (module) {
+      return module.inject(service);
+    }
+    return Injectable.get(service);
+  }
+
+  emitContentValues() {
+    if (this.element) {
+      this.#children$.next(Array.from(this.element.querySelectorAll(`[component="${this.#id}"]`)));
+    }
   }
 
   reload() {
-    const template = this.render(this.#element);
-    const vDom = new VirtualDom();
-    vDom.load(template);
-    vDom.ignore = this.#childs.map(e => e.selector);
-    const changes = vDom.apply(this.#element, {
-      component: this.#id
-    });
-
-    if (changes) {
-      const children = [];
-      this.#childs.forEach(child => {
-        const { selector, component, instances } = child;
-        instances.forEach(e => {
-          if (e instanceof Component) {
-            e.#resetInUse();
-          }
-        });
-        const elements = vDom.template.querySelectorAll(selector);
-        this.#element.querySelectorAll(selector).forEach((element, index) => {
-          const instance = this.#instanceComponent(element, component);
-          if (instance) {
-            if (!instances.includes(instance)) {
-              instances.push(instance);
-            }
-            instance.#setChildren(elements[index]);
-            instance.#markAsInUse();
-            instance.show(element);
-            element.componentInstance = instance;
-            children.push({
-              element, component: instance
-            });
-          }
-        });
-        const remove = [];
-        instances.forEach((e, i) => {
-          if (e instanceof Component) {
-            if (!e.#checkInUse()) {
-              remove.push(i);
-            }
-          }
-        });
-        remove.forEach(i => instances.splice(i, 1));
+    if (this.element) {
+      const template = this.render(this.element);
+      const vDom = new VirtualDom();
+      vDom.load(template);
+      vDom.ignore = this.#componentChildren.map(e => e.selector);
+      const changes = vDom.apply(this.element, {
+        component: this.#id
       });
-      this.#children$.next(Array.from(vDom.template.querySelectorAll(`[component="${this.#id}"]`)));
-      this.#components$.next(Array.from(children));
-      this.element.childNodes.forEach(e => this.#bindEvents(e));
+
+      if (changes) {
+        const children = [];
+        this.#componentChildren.forEach(child => {
+          const { selector, component, instances } = child;
+          instances.forEach(e => {
+            if (e instanceof Component) {
+              e.resetInUse();
+              e.emitContentValues();
+            }
+          });
+          const elements = vDom.template.querySelectorAll(selector);
+          this.element.querySelectorAll(selector).forEach((element, index) => {
+            const instance = this.#instanceComponent(element, component);
+            if (instance) {
+              if (!instances.includes(instance)) {
+                instances.push(instance);
+              }
+              instance.setContent(elements[index]);
+              instance.markAsInUse();
+              instance.showComponentInElement(element);
+              instance.emitContentValues();
+              element.componentInstance = instance;
+              children.push({
+                element, component: instance
+              });
+            }
+          });
+          const remove = [];
+          instances.forEach((e, i) => {
+            if (e instanceof Component) {
+              if (!e.checkInUse()) {
+                remove.push(i);
+              }
+            }
+          });
+          remove.forEach(i => instances.splice(i, 1));
+
+          if (component instanceof Component) {
+            component.emitContentValues();
+          }
+        });
+        this.#directives.forEach(({ directive, selector }) => {
+          this.element.querySelectorAll(`[${ selector }]`).forEach(element => {
+            if (directive instanceof Directive) {
+              directive.init(element, selector);
+            }
+          });
+        });
+        this.#components$.next(Array.from(children));
+        this.element.childNodes.forEach(e => this.#bindEvents(e));
+      }
+      this.emitContentValues();
+      this.#onReloadCallbacks.forEach(e => e());
+      this.onReload();
     }
-    this.#onReloadCallbacks.forEach(e => e());
-    this.onReload();
   }
 }

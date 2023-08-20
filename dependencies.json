@@ -1,0 +1,11 @@
+{
+  "source": "vendor/",
+  "dependencies": {
+    "small-rxjs": {
+      "link": "https://github.com/thiagofleal/small-rxjs",
+      "version": "master",
+      "commit": "de6d4bf66aa231768cd6a026dff79ccc841eaa6d",
+      "commands": ""
+    }
+  }
+}

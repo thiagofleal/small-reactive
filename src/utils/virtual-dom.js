@@ -32,7 +32,7 @@ function diffAttributes(template, element) {
 }
 
 function diff(template, element, ignore) {
-	const domNodes = Array.from(element.childNodes);
+	const domNodes = Array.from(element ? element.childNodes : []);
 	const templateNodes = Array.from(template.childNodes);
 	let count = domNodes.length - templateNodes.length;
 	let changes = 0;
@@ -47,7 +47,7 @@ function diff(template, element, ignore) {
 	templateNodes.forEach((node, index) => {
 		if (!domNodes[index]) {
 			const child = node.cloneNode(true);
-			element.appendChild(child);
+			element ? element.appendChild(child) : void 0;
 			changes++;
 			return;
 		}

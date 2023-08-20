@@ -7,7 +7,8 @@ export class Style {
 			.replace(/\s\{/g, "{").replace(/\{\s/g, "{")
 			.replace(/\s\]/g, "]").replace(/\]\s/g, "]")
 			.replace(/\s\[/g, "[").replace(/\[\s/g, "[")
-			.replace(/\s:/g, ":").replace(/:\s/g, ":");
+			.replace(/\s:/g, ":").replace(/:\s/g, ":")
+			.trim();
 	}
 
 	static create(css, options, attributes) {
