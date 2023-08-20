@@ -62,7 +62,7 @@ export class Module {
     Module.#mapDirectives.set(directive, this);
   }
 
-  registerInjectable(ref, arg) {
+  registerInjectable(ref, arg, soft) {
     let inject = null;
     let clazz = null;
 
@@ -81,8 +81,12 @@ export class Module {
       }
     }
     if (inject && clazz) {
-      this.#instanceInjectables.set(clazz, inject);
-      Module.#mapInjectables.set(clazz, this);
+      let set = true;
+
+      if (soft) set = !this.#instanceInjectables.get(clazz);
+      if (set) this.#instanceInjectables.set(clazz, inject);
+      if (!soft) Module.#mapInjectables.set(clazz, this);
+
       inject.notify({
         event: "inject",
         target: clazz
@@ -107,7 +111,7 @@ export class Module {
     }
     if (module instanceof Module) {
       this.#instanceModules.push(module);
-      module.getExported().forEach(e => this.registerInjectable(e));
+      module.getExported().forEach(e => this.registerInjectable(e, void 0, true));
     }
   }
 
