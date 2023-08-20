@@ -123,15 +123,19 @@ export class Module {
   }
 
   getExported() {
-    return this.#exports.map(e => this.inject(e));
+    return this.#exports.map(e => this.#get(e));
   }
 
-  inject(service) {
+  #get(service) {
     const ret = this.#instanceInjectables.get(service);
 
     if (!ret && this !== Module.global) {
-      return Module.global.inject(service);
+      return Module.global.#get(service);
     }
     return ret;
+  }
+
+  inject(service) {
+    return this.#get(service);
   }
 }
