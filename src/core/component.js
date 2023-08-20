@@ -3,7 +3,6 @@ import { VirtualDom } from "../utils/virtual-dom.js";
 import { BehaviorSubject, map, Subscription } from "../../rx.js";
 import { Style } from "./style.js";
 import { Module } from "./module.js";
-import { Injectable } from "./injectable.js";
 import { Directive } from "./directive.js";
 
 export class Component {
@@ -351,7 +350,6 @@ export class Component {
     if (module) {
       return module.inject(service);
     }
-    return Injectable.get(service);
   }
 
   emitContentValues() {
