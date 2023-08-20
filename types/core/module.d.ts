@@ -22,9 +22,9 @@ export class Module {
     module: ModuleInitialize,
     args?:  any
   ): void
-  static getFromComponent(component: Component | Constructable<Component>): Module
-  static getFromDirective(directive: Directive | Constructable<Directive>): Module
-  static getFromInjectable(service: Service | Constructable<Service>): Module
+  static getFromComponent(component: Constructable<Component>): Module
+  static getFromDirective(directive: Constructable<Directive>): Module
+  static getFromInjectable(service: Constructable<Service>): Module
 
   registerComponent(component: Constructable<Component>): void
   registerDirective(directive: Constructable<Directive>): void
