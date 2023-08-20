@@ -1,5 +1,5 @@
 import { getAllAttributesFrom } from "../utils/functions.js";
-import { Component } from "./component.js";
+import { Component } from "../../core.js";
 
 export class Switch extends Component {
   #components = {};
