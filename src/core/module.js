@@ -83,6 +83,11 @@ export class Module {
     if (inject && clazz) {
       this.#instanceInjectables.set(clazz, inject);
       Module.#mapInjectables.set(clazz, this);
+      inject.notify({
+        event: "inject",
+        target: clazz
+      });
+      inject.onRegister();
     }
   }
 
@@ -132,6 +137,7 @@ export class Module {
     if (!ret && this !== Module.global) {
       return Module.global.#get(service);
     }
+    if (ret) ret.onGet();
     return ret;
   }
 

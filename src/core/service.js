@@ -4,6 +4,9 @@ import { Module } from "./module.js";
 export class Service {
   constructor() {
     this.events$ = new Subject();
+    this.notify({
+      event: "create"
+    });
   }
 
   onRegister() { }
