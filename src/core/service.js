@@ -1,10 +1,12 @@
 import { Subject } from "../../rx.js";
-import { Injectable } from "./injectable.js";
 import { Module } from "./module.js";
 
 export class Service {
   constructor() {
     this.events$ = new Subject();
+    this.notify({
+      event: "create"
+    });
   }
 
   onRegister() { }
@@ -25,6 +27,5 @@ export class Service {
     if (module) {
       return module.inject(service);
     }
-    return Injectable.get(service);
   }
 }

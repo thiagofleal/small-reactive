@@ -1,4 +1,4 @@
-import { Module, Injectable } from "../../core.js";
+import { Module } from "../../core.js";
 
 export class Directive {
   #component = null;
@@ -28,6 +28,5 @@ export class Directive {
     if (module) {
       return module.inject(service);
     }
-    return Injectable.get(service);
   }
 }
