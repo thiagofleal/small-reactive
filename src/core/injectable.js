@@ -2,11 +2,9 @@ import { Module } from "./module.js";
 
 export class Injectable {
   static registerIn(classRef, from, args) {
-    from.registerChild(classRef, args);
-  }
-
-  static registerInstanceIn(instance, from) {
-    from.registerChild(instance);
+    if (from instanceof Module) {
+      from.registerInjectable(classRef, args);
+    }
   }
 
   static getFrom(classRef, from) {
@@ -15,10 +13,6 @@ export class Injectable {
 
   static register(classRef, args) {
     this.registerIn(classRef, Module.global, args);
-  }
-
-  static registerInstance(instance) {
-    this.registerInstanceIn(instance, Module.global);
   }
 
   static get(classRef) {
