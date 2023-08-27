@@ -1,7 +1,13 @@
 import { RegistryManagerReturn } from "../utils/registry-manager"
 import { Service } from "../../core"
 
-export declare class HttpRequest<T = any> extends Service<T> {
+type Transform<T> = { transform: (response: Response) => T | Promise<T> };
+
+export type RequestInitJson = RequestInit & { json?: boolean };
+export type RequestInitTransform<T> = RequestInit & Transform<T>;
+export type RequestInitJsonTransform<T> = RequestInitJson & Transform<T>;
+
+export declare class HttpRequest<E = any> extends Service<E> {
   constructor();
 
   registerBeforeSendCallback(
@@ -9,12 +15,12 @@ export declare class HttpRequest<T = any> extends Service<T> {
       url?: string,
       method?: string,
       body?: any,
-      opts?: RequestInit | undefined
+      opts?: RequestInitJson
     ) => {
       url?: string,
       method?: string,
       body?: any,
-      opts?: RequestInit
+      opts?: RequestInitJson
     } | undefined
   ): RegistryManagerReturn;
 
@@ -26,18 +32,26 @@ export declare class HttpRequest<T = any> extends Service<T> {
     url: string,
     method: string,
     body?: any,
-    opts?: RequestInit
+    opts?: RequestInitJson
   ): Promise<T>;
 
   getResponse(url: string, args?: RequestInit): Promise<Response>;
-	get<T = any>(url: string, args?: RequestInit): Promise<T>;
+	get(url: string, args?: RequestInit): Promise<Response>;
+	get<T>(url: string, args: RequestInitTransform<T>): Promise<T>;
 
-	postResponse(url: string, body: any, args?: RequestInit): Promise<Response>;
-	post<T = any>(url: string, body: any, args?: RequestInit): Promise<T>;
+	postResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+	post(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+	post<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
 
-	putResponse(url: string, body: any, args?: RequestInit): Promise<Response>;
-  put<T = any>(url: string, body: any, args?: RequestInit): Promise<T>;
+	putResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  put(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  put<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
+
+	patchResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  patch(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  patch<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
 
 	deleteResponse(url: string, args?: RequestInit): Promise<Response>;
-	delete<T = any>(url: string, args?: RequestInit): Promise<T>;
+	delete(url: string, args?: RequestInit): Promise<Response>;
+	delete<T>(url: string, args?: RequestInitTransform<T>): Promise<T>;
 }

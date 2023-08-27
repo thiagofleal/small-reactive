@@ -2,7 +2,6 @@ import { Service } from "../../core.js"
 import { RegistryManager } from "../utils/registry-manager.js";
 
 export class HttpRequest extends Service {
-
   #beforeSendCallbacks = new RegistryManager();
   #afterSendCallbacks = new RegistryManager();
 
@@ -50,8 +49,9 @@ export class HttpRequest extends Service {
       opts.headers = {};
     }
     if (body) {
-      if (opts.headers["content-type"] === "application/json") {
+      if (opts.json) {
         opts.body = JSON.stringify(body);
+        opts.headers = { "content-type": "application/json", ...opts.headers };
       } else {
         opts.body = body;
       }
@@ -65,9 +65,9 @@ export class HttpRequest extends Service {
     return ret;
 	}
 
-  async #getResponseValue(response) {
-		if (response !== false && response.ok) {
-			return await response.json();
+  async #getResponseValue(response, cb) {
+		if (response && response.ok) {
+			return cb ? cb(response) : response;
 		}
     throw new Error(response ? response.statusText : "Request failed");
   }
@@ -77,8 +77,9 @@ export class HttpRequest extends Service {
 	}
 
 	async get(url, args) {
+    const cb = args.transform;
 		const response = await this.getResponse(url, args);
-    return this.#getResponseValue(response);
+    return this.#getResponseValue(response, cb);
 	}
 
 	async postResponse(url, body, args) {
@@ -86,8 +87,9 @@ export class HttpRequest extends Service {
 	}
 
 	async post(url, body, args) {
+    const cb = args.transform;
 		const response = await this.postResponse(url, body, args);
-    return this.#getResponseValue(response);
+    return this.#getResponseValue(response, cb);
 	}
 
 	async putResponse(url, body, args) {
@@ -95,8 +97,19 @@ export class HttpRequest extends Service {
 	}
 
 	async put(url, body, args) {
+    const cb = args.transform;
 		const response = await this.putResponse(url, body, args);
-    return this.#getResponseValue(response);
+    return this.#getResponseValue(response, cb);
+	}
+
+	async patchResponse(url, body, args) {
+		return await this.request(url, "PATCH", body, args);
+	}
+
+	async patch(url, body, args) {
+    const cb = args.transform;
+		const response = await this.patchResponse(url, body, args);
+    return this.#getResponseValue(response, cb);
 	}
 
 	async deleteResponse(url, args) {
@@ -104,7 +117,8 @@ export class HttpRequest extends Service {
 	}
 
 	async delete(url, args) {
+    const cb = args.transform;
 		const response = await this.deleteResponse(url, args);
-    return this.#getResponseValue(response);
+    return this.#getResponseValue(response, cb);
 	}
 }

@@ -1,98 +1,151 @@
-import { Injectable } from "./injectable.js";
+import { Service } from "./service.js";
 
 export class Module {
-  static #modules = new Map();
+  static global = new Module();
+
   static #mapComponents = new Map();
   static #mapDirectives = new Map();
   static #mapInjectables = new Map();
 
-  injectables = [];
-  components = [];
-  directives = [];
-  modules = [];
+  #instanceInjectables = new Map();
+  #instanceModules = [];
+  #exports = [];
 
   constructor(options) {
+    let injectables = [];
+    let components = [];
+    let directives = [];
+    let modules = [];
+
     if (!options) options = {};
     if (options.components) {
       if (!Array.isArray(options.components)) {
         options.components = [ options.components ];
       }
-      this.components = options.components;
+      components = options.components;
     }
     if (options.directives) {
       if (!Array.isArray(options.directives)) {
         options.directives = [ options.directives ];
       }
-      this.directives = options.directives;
+      directives = options.directives;
     }
     if (options.inject) {
       if (!Array.isArray(options.inject)) {
         options.inject = [ options.inject ];
       }
-      this.injectables = options.inject;
+      injectables = options.inject;
     }
     if (options.imports) {
       if (!Array.isArray(options.imports)) {
         options.imports = [ options.imports ];
       }
-      this.modules = options.imports.map(e => Module.#modules.get(e));
+      modules = options.imports;
+    }
+    if (options.exports) {
+      if (!Array.isArray(options.exports)) {
+        options.exports = [ options.exports ];
+      }
+      this.#exports = options.exports;
+    }
+    components.forEach(e => this.registerComponent(e));
+    directives.forEach(e => this.registerDirective(e));
+    injectables.forEach(e => this.registerInjectable(e));
+    modules.forEach(e => this.registerChild(e));
+  }
+
+  registerComponent(component) {
+    Module.#mapComponents.set(component, this);
+  }
+
+  registerDirective(directive) {
+    Module.#mapDirectives.set(directive, this);
+  }
+
+  registerInjectable(ref, arg, soft) {
+    let inject = null;
+    let clazz = null;
+
+    if (ref instanceof Service) {
+      inject = ref;
+      clazz = inject.constructor;
+    } else if (typeof ref === "object") {
+      return this.registerInjectable(ref.service, ref.args);
+    } else if (typeof ref === "function") {
+      try {
+        inject = new ref(arg);
+        clazz = ref;
+      } catch (e) {
+        inject = ref(arg);
+        clazz = inject.constructor;
+      }
+    }
+    if (inject && clazz) {
+      let set = true;
+
+      if (soft) set = !this.#instanceInjectables.get(clazz);
+      if (set) this.#instanceInjectables.set(clazz, inject);
+      if (!soft) Module.#mapInjectables.set(clazz, this);
+
+      inject.notify({
+        event: "inject",
+        target: clazz
+      });
+      inject.onRegister();
     }
   }
 
-  static register(module, args) {
-    let instance;
+  registerChild(ref, arg) {
+    let module = null;
 
-    if (module instanceof Module) {
-      instance = module;
-    } else if (typeof module === "function") {
+    if (ref instanceof Module) {
+      module = ref;
+    } else if (typeof ref === "object") {
+      return this.registerChild(ref.module, ref.args);
+    } else if (typeof ref === "function") {
       try {
-        instance = new module(args);
+        module = new ref(arg);
       } catch (e) {
-        instance = module(args);
+        module = ref(arg);
       }
-    } else if (typeof module === "object") {
-      return this.register(module.module, module.args);
     }
-    this.#modules.set(module.constructor, instance);
+    if (module instanceof Module) {
+      this.#instanceModules.push(module);
+      module.getExported().forEach(e => this.registerInjectable(e, void 0, true));
+    }
+  }
 
-    instance.components.forEach(component => {
-      this.#mapComponents.set(component, instance);
-    });
-    instance.directives.forEach(directivet => {
-      this.#mapDirectives.set(directivet, instance);
-    });
-    instance.injectables.forEach(injectable => {
-      this.#mapInjectables.set(injectable, instance);
-      Injectable.registerIn(injectable, instance);
-    });
+  static register(ref, arg) {
+    this.global.registerChild(ref, arg);
   }
 
   static getFromComponent(component) {
-    return this.#mapComponents.get(component);
+    return this.#mapComponents.get(component) || this.global;
   }
 
   static getFromDirective(directive) {
-    return this.#mapDirectives.get(directive);
+    return this.#mapDirectives.get(directive) || this.global;
   }
 
   static getFromInjectable(inject) {
-    return this.#mapInjectables.get(inject);
+    return this.#mapInjectables.get(inject) || this.global;
   }
 
-  getFromImports(service) {
-    for (let i = 0; i < this.modules.length; i++) {
-      const module = this.modules[i];
-      const instance = Injectable.getFrom(service, module);
+  getExported() {
+    return this.#exports.map(e => this.#get(e));
+  }
 
-      if (instance) {
-        return instance;
-      }
+  #get(service) {
+    const ret = this.#instanceInjectables.get(service);
+
+    if (!ret && this !== Module.global) {
+      return Module.global.#get(service);
     }
+    if (ret) ret.onGet();
+    return ret;
   }
 
   inject(service) {
-    return Injectable.getFrom(service, this)
-    || this.getFromImports(service)
-    || Injectable.get(service);
+    return this.#get(service);
   }
 }
