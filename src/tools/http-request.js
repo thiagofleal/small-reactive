@@ -76,7 +76,8 @@ export class HttpRequest extends Service {
 		return await this.request(url, "GET", null, args);
 	}
 
-	async get(url, args, cb) {
+	async get(url, args) {
+    const cb = args.transform;
 		const response = await this.getResponse(url, args);
     return this.#getResponseValue(response, cb);
 	}
@@ -85,7 +86,8 @@ export class HttpRequest extends Service {
 		return await this.request(url, "POST", body, args);
 	}
 
-	async post(url, body, args, cb) {
+	async post(url, body, args) {
+    const cb = args.transform;
 		const response = await this.postResponse(url, body, args);
     return this.#getResponseValue(response, cb);
 	}
@@ -94,7 +96,8 @@ export class HttpRequest extends Service {
 		return await this.request(url, "PUT", body, args);
 	}
 
-	async put(url, body, args, cb) {
+	async put(url, body, args) {
+    const cb = args.transform;
 		const response = await this.putResponse(url, body, args);
     return this.#getResponseValue(response, cb);
 	}
@@ -103,7 +106,8 @@ export class HttpRequest extends Service {
 		return await this.request(url, "PATCH", body, args);
 	}
 
-	async patch(url, body, args, cb) {
+	async patch(url, body, args) {
+    const cb = args.transform;
 		const response = await this.patchResponse(url, body, args);
     return this.#getResponseValue(response, cb);
 	}
@@ -112,7 +116,8 @@ export class HttpRequest extends Service {
 		return await this.request(url, "DELETE", null, args);
 	}
 
-	async delete(url, args, cb) {
+	async delete(url, args) {
+    const cb = args.transform;
 		const response = await this.deleteResponse(url, args);
     return this.#getResponseValue(response, cb);
 	}
