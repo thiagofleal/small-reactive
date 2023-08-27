@@ -1,10 +1,13 @@
 import { RegistryManagerReturn } from "../utils/registry-manager"
 import { Service } from "../../core"
 
-type ResponseCallback<T> = (response: Response) => T | Promise<T>;
-type CustomRequestInit = RequestInit & { json?: boolean };
+type Transform<T> = { transform: (response: Response) => T | Promise<T> };
 
-export declare class HttpRequest<T = any> extends Service<T> {
+export type RequestInitJson = RequestInit & { json?: boolean };
+export type RequestInitTransform<T> = RequestInit & Transform<T>;
+export type RequestInitJsonTransform<T> = RequestInitJson & Transform<T>;
+
+export declare class HttpRequest<E = any> extends Service<E> {
   constructor();
 
   registerBeforeSendCallback(
@@ -12,12 +15,12 @@ export declare class HttpRequest<T = any> extends Service<T> {
       url?: string,
       method?: string,
       body?: any,
-      opts?: CustomRequestInit
+      opts?: RequestInitJson
     ) => {
       url?: string,
       method?: string,
       body?: any,
-      opts?: CustomRequestInit
+      opts?: RequestInitJson
     } | undefined
   ): RegistryManagerReturn;
 
@@ -29,31 +32,26 @@ export declare class HttpRequest<T = any> extends Service<T> {
     url: string,
     method: string,
     body?: any,
-    opts?: CustomRequestInit
+    opts?: RequestInitJson
   ): Promise<T>;
 
   getResponse(url: string, args?: RequestInit): Promise<Response>;
-
 	get(url: string, args?: RequestInit): Promise<Response>;
-	get<T>(url: string, args: RequestInit, cb: ResponseCallback<T>): Promise<T>;
+	get<T>(url: string, args: RequestInitTransform<T>): Promise<T>;
 
-	postResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
+	postResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+	post(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+	post<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
 
-  post(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
-	post<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
+	putResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  put(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  put<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
 
-	putResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
+	patchResponse(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  patch(url: string, body: any, args?: RequestInitJson): Promise<Response>;
+  patch<T>(url: string, body: any, args?: RequestInitJsonTransform<T>): Promise<T>;
 
-  put(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
-  put<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
-
-	patchResponse(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
-
-  patch(url: string, body: any, args?: CustomRequestInit): Promise<Response>;
-  patch<T>(url: string, body: any, args: CustomRequestInit, cb: ResponseCallback<T>): Promise<T>;
-
-	deleteResponse(url: string, args?: CustomRequestInit): Promise<Response>;
-
-  delete(url: string, args?: RequestInit): Promise<Response>;
-	delete<T>(url: string, args: RequestInit, cb: ResponseCallback<T>): Promise<T>;
+	deleteResponse(url: string, args?: RequestInit): Promise<Response>;
+	delete(url: string, args?: RequestInit): Promise<Response>;
+	delete<T>(url: string, args?: RequestInitTransform<T>): Promise<T>;
 }
