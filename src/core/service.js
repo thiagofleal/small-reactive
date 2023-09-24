@@ -2,14 +2,26 @@ import { Subject } from "../../rx.js";
 import { Module } from "./module.js";
 
 export class Service {
-  constructor() {
+  #module = null;
+
+  constructor(context) {
+    if (!context) context = {};
+    if (!(context.module instanceof Module)) {
+      throw new Error("Invalid module");
+    }
+    this.#module = context.module;
     this.events$ = new Subject();
+
     this.notify({
-      event: "create"
+      event: "create",
+      instance: this,
+      context
     });
   }
 
   onRegister() { }
+
+  onImport() { }
 
   onGet() { }
 
@@ -22,7 +34,7 @@ export class Service {
   }
 
   inject(service) {
-    const module = Module.getFromInjectable(this.constructor);
+    const module = this.#module;
 
     if (module) {
       return module.inject(service);

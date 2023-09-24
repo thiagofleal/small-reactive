@@ -8,7 +8,7 @@ export type RequestInitTransform<T> = RequestInit & Transform<T>;
 export type RequestInitJsonTransform<T> = RequestInitJson & Transform<T>;
 
 export declare class HttpRequest<E = any> extends Service<E> {
-  constructor();
+  constructor(context: unknown);
 
   registerBeforeSendCallback(
     callback: (
