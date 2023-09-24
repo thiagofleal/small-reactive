@@ -1,6 +1,6 @@
-export { SmallReactive } from "./types/core/small-reactive";
-export { Component, OnConnect, OnDisconnect, OnShow, OnReload } from "./types/core/component";
-export { Directive } from "./types/core/directive";
-export { Module } from "./types/core/module";
-export { Injectable } from "./types/core/injectable";
-export { Service } from "./types/core/service";
+export * from "./types/core/small-reactive";
+export * from "./types/core/component";
+export * from "./types/core/directive";
+export * from "./types/core/module";
+export * from "./types/core/injectable";
+export * from "./types/core/service";

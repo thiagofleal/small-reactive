@@ -5,8 +5,8 @@ export class HttpRequest extends Service {
   #beforeSendCallbacks = new RegistryManager();
   #afterSendCallbacks = new RegistryManager();
 
-  constructor() {
-    super();
+  constructor(context) {
+    super(context);
   }
 
   #send(url, opts) {

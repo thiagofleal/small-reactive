@@ -1,10 +1,18 @@
 import { Observable } from "../../rx";
 import { Constructable } from "../utils/constructable";
+import { Module } from "./module";
+
+export interface OnRegister {
+  onRegister(module?: Module): void | Promise<void>;
+}
+
+export interface OnImport {
+  onImport(module?: Module): void | Promise<void>;
+}
 
 export class Service<T = any> {
-  constructor();
+  constructor(context: unknown);
 
-  onRegister?(): void;
   onGet?(): void;
 
   notify(event: T): void;

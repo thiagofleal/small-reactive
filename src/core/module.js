@@ -5,7 +5,6 @@ export class Module {
 
   static #mapComponents = new Map();
   static #mapDirectives = new Map();
-  static #mapInjectables = new Map();
 
   #instanceInjectables = new Map();
   #instanceModules = [];
@@ -48,10 +47,10 @@ export class Module {
       }
       this.#exports = options.exports;
     }
-    components.forEach(e => this.registerComponent(e));
-    directives.forEach(e => this.registerDirective(e));
     injectables.forEach(e => this.registerInjectable(e));
     modules.forEach(e => this.registerChild(e));
+    components.forEach(e => this.registerComponent(e));
+    directives.forEach(e => this.registerDirective(e));
   }
 
   registerComponent(component) {
@@ -62,7 +61,7 @@ export class Module {
     Module.#mapDirectives.set(directive, this);
   }
 
-  registerInjectable(ref, arg, soft) {
+  registerInjectable(ref, args, soft) {
     let inject = null;
     let clazz = null;
 
@@ -73,25 +72,29 @@ export class Module {
       return this.registerInjectable(ref.service, ref.args);
     } else if (typeof ref === "function") {
       try {
-        inject = new ref(arg);
+        inject = new ref({ module: this }, args);
         clazz = ref;
       } catch (e) {
-        inject = ref(arg);
+        inject = ref(args);
         clazz = inject.constructor;
       }
     }
     if (inject && clazz) {
       let set = true;
 
-      if (soft) set = !this.#instanceInjectables.get(clazz);
-      if (set) this.#instanceInjectables.set(clazz, inject);
-      if (!soft) Module.#mapInjectables.set(clazz, this);
-
+      if (soft) {
+        set = !this.#instanceInjectables.get(clazz);
+        inject.onImport(this);
+      } else {
+        inject.onRegister(this);
+      }
+      if (set) {
+        this.#instanceInjectables.set(clazz, inject);
+      }
       inject.notify({
         event: "inject",
         target: clazz
       });
-      inject.onRegister();
     }
   }
 
@@ -125,10 +128,6 @@ export class Module {
 
   static getFromDirective(directive) {
     return this.#mapDirectives.get(directive) || this.global;
-  }
-
-  static getFromInjectable(inject) {
-    return this.#mapInjectables.get(inject) || this.global;
   }
 
   getExported() {
