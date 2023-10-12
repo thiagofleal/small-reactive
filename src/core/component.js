@@ -23,6 +23,7 @@ export class Component {
   #parent = undefined;
   #context = this;
   #listenersMap = new Map();
+  #bindsMap = new Map();
 
   constructor(options) {
     this.#id = [
@@ -171,11 +172,14 @@ export class Component {
 
         for (const key in attributes) {
           if (key.startsWith(prefix)) {
-            this.#onReloadCallbacks.push(() => {
-              const property = key.substring(prefix.length);
-              element.componentInstance[property] = new Function(`return ${ attributes[key] }`)
-                .call(this.#context);
-            });
+            if (!this.#bindsMap.has(element.component)) {
+              this.#bindsMap.set(element.component, {});
+            }
+            const map = this.#bindsMap.get(element.component);
+
+            const property = key.substring(prefix.length);
+            map[property] = () => new Function(`return ${ attributes[key] }`)
+              .call(this.#context);
           }
         }
       }
@@ -421,6 +425,11 @@ export class Component {
       }
       this.emitContentValues();
       this.#onReloadCallbacks.forEach(e => e());
+      this.#bindsMap.forEach((properties, component) => {
+        for (const key in properties) {
+          component[key] = properties[key].call();
+        }
+      });
       this.onReload();
     }
   }
