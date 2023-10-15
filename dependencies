@@ -3,7 +3,7 @@ mkdir -p vendor/
 cd vendor/
 git clone https://github.com/thiagofleal/small-rxjs small-rxjs
 cd small-rxjs
-git fetch https://github.com/thiagofleal/small-rxjs && git checkout master
-git pull https://github.com/thiagofleal/small-rxjs master
-git checkout de6d4bf66aa231768cd6a026dff79ccc841eaa6d
+git fetch https://github.com/thiagofleal/small-rxjs
+git pull https://github.com/thiagofleal/small-rxjs --tags
+git checkout 1.0.1
 cd ..

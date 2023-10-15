@@ -404,6 +404,7 @@ export class Component {
             if (e instanceof Component) {
               if (!e.checkInUse()) {
                 remove.push(i);
+                this.#bindsMap.delete(e);
               }
             }
           });
