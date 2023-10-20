@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 mkdir -p vendor/
 cd vendor/
-git clone https://github.com/thiagofleal/small-rxjs small-rxjs
-cd small-rxjs
-git fetch https://github.com/thiagofleal/small-rxjs
-git pull https://github.com/thiagofleal/small-rxjs --tags
-git checkout 1.0.1
+if [ -d "small-rxjs" ]; then
+	git -C small-rxjs fetch -tap
+	git -C small-rxjs checkout 1.0.1
+else
+	git clone -b 1.0.1 https://github.com/thiagofleal/small-rxjs small-rxjs
+fi
 cd ..
